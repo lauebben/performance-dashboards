@@ -4,192 +4,275 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Game Performance Dashboard — Panetolikos FC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
+  /* ============================================================
+     Theme — Panetolikos FC (yellow/navy) — matches wellness-rpe
+     ============================================================ */
   :root {
-    --bg-deep: #0b0d10;
-    --bg-panel: #14181d;
-    --bg-elevated: #1b2027;
-    --border: #262d36;
-    --border-strong: #323b47;
-    --text-primary: #f4f5f7;
-    --text-secondary: #a3acb9;
-    --text-muted: #6b7480;
-    --accent: #d4af37;       /* Panetolikos gold */
-    --accent-dim: #8c7426;
-    --accent-soft: rgba(212, 175, 55, 0.12);
-    --pos: #2dd4a7;
-    --neg: #ef6b6b;
-    --shadow: 0 6px 24px rgba(0,0,0,0.35);
-    --radius: 10px;
-    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-display: 'Bebas Neue', 'Inter', sans-serif;
+    --bg:           #FFCC33;
+    --navy:         #0F2C5C;
+    --navy-deep:    #0a1f42;
+    --card:         #FBF2C7;
+    --card-border:  rgba(15, 44, 92, 0.10);
+    --text:         #0F2C5C;
+    --text-muted:   #5a6788;
+    --pill-border:  rgba(15, 44, 92, 0.25);
+    --green:        #2D9B3F;
+    --orange:       #E07B1F;
+    --red:          #d64545;
+    --shadow:       0 2px 8px rgba(15, 44, 92, 0.10);
+    --radius:       14px;
+    --radius-sm:    8px;
+    --font-display: 'Bebas Neue', 'Oswald', Impact, sans-serif;
+    --font-body:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
-
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap');
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   html, body {
-    background: var(--bg-deep);
-    color: var(--text-primary);
-    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
   }
 
   .app {
-    max-width: 1400px;
+    max-width: 1480px;
     margin: 0 auto;
-    padding: 28px 32px 60px;
+    padding: 22px 28px 60px;
   }
 
-  /* Header */
+  /* ============================================================
+     Header — navy panel with logo left and right
+     ============================================================ */
   .header {
+    background: var(--navy);
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 22px 28px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 28px;
-    flex-wrap: wrap;
-    gap: 16px;
+    gap: 24px;
+    margin-bottom: 18px;
   }
-  .header-left { display: flex; align-items: center; gap: 18px; }
-  .crest {
-    width: 48px; height: 48px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
-    display: flex; align-items: center; justify-content: center;
-    color: #0b0d10;
-    font-family: var(--font-display);
-    font-size: 1.4rem;
-    letter-spacing: 1px;
-    box-shadow: 0 2px 12px rgba(212,175,55,0.3);
+  .header-left { display: flex; align-items: center; gap: 18px; flex: 1; min-width: 0; }
+  .header-logo {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    flex-shrink: 0;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
   }
+  .header-logo-right {
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+    flex-shrink: 0;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+  }
+
+  .titles { min-width: 0; }
   .titles h1 {
     font-family: var(--font-display);
-    font-size: 1.8rem;
+    font-size: 2rem;
     letter-spacing: 1.5px;
-    color: var(--text-primary);
-  }
-  .titles .subtitle {
-    color: var(--text-secondary);
-    font-size: 0.85rem;
-    margin-top: 2px;
-    letter-spacing: 0.3px;
-  }
-  .titles .subtitle strong { color: var(--accent); font-weight: 600; }
-
-  .header-right { display: flex; align-items: center; gap: 12px; }
-  .refresh-btn {
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-strong);
-    color: var(--text-primary);
-    padding: 9px 16px;
-    border-radius: var(--radius);
-    cursor: pointer;
-    font-family: var(--font-sans);
-    font-size: 0.85rem;
-    font-weight: 500;
-    display: flex; align-items: center; gap: 8px;
-    transition: all 0.15s ease;
-  }
-  .refresh-btn:hover {
-    background: var(--accent-soft);
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-  .refresh-btn svg { width: 14px; height: 14px; }
-
-  /* Filter bar */
-  .filters {
-    display: grid;
-    grid-template-columns: 2fr 2fr 1.2fr;
-    gap: 16px;
-    margin-bottom: 24px;
-  }
-  @media (max-width: 900px) { .filters { grid-template-columns: 1fr; } }
-
-  .filter {
-    background: var(--bg-panel);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 14px 16px;
-  }
-  .filter-label {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 1.2px;
-    color: var(--text-muted);
+    font-weight: 400;
+    color: #fff;
+    line-height: 1;
     margin-bottom: 8px;
+  }
+  .titles .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 22px;
+    font-size: 0.88rem;
+    color: rgba(255,255,255,0.85);
+  }
+  .titles .meta-row span strong {
+    color: #fff;
+    font-weight: 700;
+    margin-left: 4px;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+  .header-game-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .header-label {
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.7);
     font-weight: 600;
   }
-
-  /* Native select for game and metric */
-  select.dropdown {
-    width: 100%;
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-strong);
-    color: var(--text-primary);
-    padding: 9px 12px;
-    border-radius: 6px;
-    font-family: var(--font-sans);
-    font-size: 0.9rem;
+  select.header-select {
+    background: var(--navy-deep);
+    border: 1.5px solid rgba(255,255,255,0.25);
+    color: #fff;
+    padding: 9px 32px 9px 14px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-body);
+    font-size: 0.92rem;
+    font-weight: 600;
     cursor: pointer;
     appearance: none;
     -webkit-appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a3acb9' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e");
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'/%3e%3c/svg%3e");
     background-repeat: no-repeat;
     background-position: right 10px center;
     background-size: 14px;
-    padding-right: 32px;
+    min-width: 280px;
   }
-  select.dropdown:focus {
+  select.header-select:focus {
     outline: none;
-    border-color: var(--accent);
+    border-color: var(--bg);
   }
 
-  /* Multi-select drill */
+  .header-stat-pill {
+    border: 1.5px solid var(--bg);
+    color: var(--bg);
+    padding: 10px 18px;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+
+  /* ============================================================
+     KPI stat cards
+     ============================================================ */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 18px 16px 22px;
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+  .stat-card .label {
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 1.6px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 8px;
+  }
+  .dial-wrap {
+    position: relative;
+    width: 150px;
+    height: 84px;
+    margin: 6px auto 4px;
+  }
+  .dial-wrap svg { display: block; width: 100%; height: 100%; }
+  .dial-value {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-display);
+    font-size: 1.9rem;
+    letter-spacing: 1px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .dial-pct-row {
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    gap: 14px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 8px;
+  }
+  .dial-pct-row .pct { color: var(--navy); font-weight: 700; }
+  .dial-pct-row .best { color: var(--text-muted); }
+  .dial-pct-row .best b { color: var(--navy); font-weight: 700; }
+
+  /* ============================================================
+     Filters row
+     ============================================================ */
+  .filters {
+    display: grid;
+    grid-template-columns: 1.2fr 2fr;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .filter-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    box-shadow: var(--shadow);
+  }
+  .filter-card .label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 8px;
+  }
+
+  /* Drill multi-select */
   .multi-wrap { position: relative; }
   .multi-trigger {
     width: 100%;
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-strong);
-    color: var(--text-primary);
-    padding: 9px 12px;
-    border-radius: 6px;
-    font-size: 0.9rem;
+    background: #fff;
+    border: 1.5px solid var(--pill-border);
+    color: var(--navy);
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 0.92rem;
+    font-weight: 600;
     cursor: pointer;
     text-align: left;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-family: var(--font-sans);
+    font-family: var(--font-body);
   }
-  .multi-trigger:hover { border-color: var(--text-secondary); }
-  .multi-trigger.open { border-color: var(--accent); }
+  .multi-trigger:hover { border-color: var(--navy); }
+  .multi-trigger.open { border-color: var(--navy); }
   .multi-trigger .count-pill {
-    background: var(--accent-soft);
-    color: var(--accent);
-    padding: 2px 8px;
+    background: var(--navy);
+    color: var(--bg);
+    padding: 2px 10px;
     border-radius: 10px;
     font-size: 0.72rem;
-    font-weight: 600;
+    font-weight: 700;
     margin-left: 8px;
   }
   .multi-panel {
     position: absolute;
-    top: calc(100% + 4px);
+    top: calc(100% + 6px);
     left: 0;
     right: 0;
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-strong);
-    border-radius: 6px;
+    background: #fff;
+    border: 1.5px solid var(--pill-border);
+    border-radius: var(--radius-sm);
     max-height: 320px;
     overflow-y: auto;
     z-index: 50;
-    box-shadow: var(--shadow);
+    box-shadow: 0 6px 20px rgba(15,44,92,0.15);
     display: none;
   }
   .multi-panel.open { display: block; }
@@ -197,239 +280,256 @@
     display: flex;
     gap: 8px;
     padding: 8px 10px;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg-panel);
+    border-bottom: 1px solid var(--card-border);
+    background: var(--card);
     position: sticky; top: 0;
   }
   .mini-btn {
     background: transparent;
-    border: 1px solid var(--border-strong);
-    color: var(--text-secondary);
+    border: 1.5px solid var(--navy);
+    color: var(--navy);
     padding: 4px 10px;
-    border-radius: 4px;
+    border-radius: 14px;
     font-size: 0.72rem;
+    font-weight: 600;
     cursor: pointer;
-    font-family: var(--font-sans);
+    font-family: var(--font-body);
   }
-  .mini-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .mini-btn:hover { background: var(--navy); color: var(--bg); }
   .multi-option {
     display: flex; align-items: center; gap: 10px;
     padding: 8px 12px;
     cursor: pointer;
-    font-size: 0.86rem;
-    color: var(--text-primary);
+    font-size: 0.88rem;
+    color: var(--navy);
     user-select: none;
   }
-  .multi-option:hover { background: var(--accent-soft); }
+  .multi-option:hover { background: var(--card); }
   .multi-option input[type="checkbox"] {
-    accent-color: var(--accent);
+    accent-color: var(--navy);
     width: 14px; height: 14px;
     cursor: pointer;
   }
 
-  /* Stats strip */
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 14px;
-    margin-bottom: 24px;
+  /* Metric pills */
+  .metric-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
   }
-  @media (max-width: 900px) { .stats { grid-template-columns: repeat(2, 1fr); } }
-
-  .stat {
-    background: var(--bg-panel);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 14px 16px;
-    position: relative;
-    overflow: hidden;
-  }
-  .stat::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0;
-    width: 3px; height: 100%;
-    background: var(--accent);
-    opacity: 0.7;
-  }
-  .stat .label {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 1.2px;
-    color: var(--text-muted);
+  .pill {
+    background: transparent;
+    border: 1.5px solid var(--pill-border);
+    color: var(--navy);
+    padding: 7px 14px;
+    border-radius: 18px;
+    font-size: 0.82rem;
     font-weight: 600;
-    margin-bottom: 6px;
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: all 0.12s ease;
   }
-  .stat .value {
-    font-family: var(--font-display);
-    font-size: 1.8rem;
-    color: var(--text-primary);
-    letter-spacing: 1px;
-    line-height: 1;
-  }
-  .stat .unit {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    margin-left: 4px;
-    font-family: var(--font-sans);
+  .pill:hover { border-color: var(--navy); }
+  .pill.active {
+    background: var(--navy);
+    color: var(--bg);
+    border-color: var(--navy);
   }
 
-  /* Table card */
+  /* ============================================================
+     Performance Table card
+     ============================================================ */
   .card {
-    background: var(--bg-panel);
-    border: 1px solid var(--border);
+    background: var(--card);
     border-radius: var(--radius);
+    box-shadow: var(--shadow);
     overflow: hidden;
   }
   .card-header {
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between;
-    flex-wrap: wrap; gap: 8px;
+    padding: 18px 22px 14px;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
   }
   .card-title {
     font-family: var(--font-display);
-    font-size: 1.15rem;
-    letter-spacing: 1px;
-    color: var(--text-primary);
+    font-size: 1.5rem;
+    letter-spacing: 1.5px;
+    color: var(--navy);
+    line-height: 1;
   }
   .card-meta {
-    font-size: 0.78rem;
-    color: var(--text-secondary);
+    font-size: 0.82rem;
+    color: var(--text-muted);
   }
   .card-meta .metric-name {
-    color: var(--accent);
-    font-weight: 600;
+    color: var(--navy);
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
+    letter-spacing: 1px;
+  }
+
+  .table-wrap { padding: 0 18px 18px; }
+  .table-inner {
+    background: #fff;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    border: 1px solid var(--card-border);
   }
 
   table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.88rem;
+    font-size: 0.92rem;
   }
   thead th {
     text-align: left;
-    padding: 12px 20px;
-    font-size: 0.7rem;
+    padding: 12px 18px;
+    font-size: 0.74rem;
     text-transform: uppercase;
-    letter-spacing: 1.2px;
-    color: var(--text-muted);
-    background: var(--bg-elevated);
-    border-bottom: 1px solid var(--border-strong);
-    font-weight: 600;
+    letter-spacing: 1.4px;
+    color: #fff;
+    background: var(--navy);
+    font-weight: 700;
     cursor: pointer;
     user-select: none;
     white-space: nowrap;
   }
-  thead th:hover { color: var(--accent); }
-  thead th.sorted { color: var(--accent); }
+  thead th:hover { background: var(--navy-deep); }
   thead th .sort-icon {
     display: inline-block;
-    margin-left: 4px;
-    opacity: 0.5;
+    margin-left: 6px;
+    opacity: 0.55;
     font-size: 0.7rem;
   }
-  thead th.sorted .sort-icon { opacity: 1; }
+  thead th.sorted .sort-icon { opacity: 1; color: var(--bg); }
 
   tbody tr {
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--card-border);
     transition: background 0.1s ease;
   }
-  tbody tr:hover { background: rgba(212,175,55,0.04); }
+  tbody tr:hover { background: rgba(255,204,51,0.12); }
   tbody tr:last-child { border-bottom: none; }
   tbody td {
-    padding: 11px 20px;
-    color: var(--text-primary);
+    padding: 11px 18px;
+    color: var(--navy);
     white-space: nowrap;
   }
-  tbody td.player-cell {
-    font-weight: 500;
-  }
+  tbody td.player-cell { font-weight: 600; }
   tbody td.numeric {
     font-variant-numeric: tabular-nums;
     text-align: right;
   }
   tbody td.metric-value {
-    font-weight: 600;
-    color: var(--accent);
     font-variant-numeric: tabular-nums;
     text-align: right;
+    font-weight: 700;
   }
-  .pos-bar {
+  tbody td.metric-value .bar-bg {
     display: inline-block;
-    background: var(--accent-soft);
-    border-radius: 3px;
-    padding: 2px 8px;
-    color: var(--accent);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
+    background: rgba(15,44,92,0.10);
+    border-radius: 4px;
+    padding: 3px 12px;
+    color: var(--navy);
+    min-width: 80px;
+    text-align: right;
   }
+  tbody td.metric-value .bar-bg.top1 { background: var(--navy); color: var(--bg); }
+  tbody td.metric-value .bar-bg.top2 { background: rgba(15,44,92,0.65); color: #fff; }
+  tbody td.metric-value .bar-bg.top3 { background: rgba(15,44,92,0.32); color: var(--navy); }
 
   .empty-state {
     padding: 40px 20px;
     text-align: center;
     color: var(--text-muted);
-    font-size: 0.9rem;
+    font-size: 0.92rem;
   }
 
-  /* Footer */
+  /* ============================================================
+     Footer
+     ============================================================ */
   .footer {
-    margin-top: 28px;
-    padding-top: 18px;
-    border-top: 1px solid var(--border);
+    margin-top: 22px;
+    padding: 16px 22px;
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    font-size: 0.82rem;
     color: var(--text-muted);
-    font-size: 0.75rem;
     display: flex;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 10px;
+    align-items: center;
   }
   .footer code {
-    background: var(--bg-elevated);
-    padding: 2px 6px;
-    border-radius: 3px;
-    color: var(--accent);
-    font-size: 0.75rem;
+    background: rgba(15,44,92,0.08);
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: var(--navy);
+    font-weight: 600;
+    font-family: 'Inter', monospace;
+    font-size: 0.78rem;
   }
+  .footer .replace-link {
+    cursor: pointer;
+    text-decoration: underline;
+    color: var(--navy);
+    font-weight: 600;
+  }
+  .footer .replace-link:hover { color: var(--navy-deep); }
 
-  /* Loading & error states */
+  /* Loading & error */
   .loading, .error-msg {
     padding: 40px 20px;
     text-align: center;
-    color: var(--text-secondary);
+    color: var(--text-muted);
   }
-  .error-msg { color: var(--neg); }
+  .error-msg { color: var(--red); }
 
   /* Drag-drop overlay */
   .dropzone {
     position: fixed;
     inset: 0;
-    background: rgba(11,13,16,0.92);
-    backdrop-filter: blur(6px);
+    background: rgba(15,44,92,0.88);
+    backdrop-filter: blur(4px);
     z-index: 1000;
     display: none;
     align-items: center;
     justify-content: center;
-    flex-direction: column;
-    gap: 16px;
     pointer-events: none;
   }
   .dropzone.active { display: flex; }
   .dropzone-inner {
-    border: 2px dashed var(--accent);
-    padding: 80px 100px;
-    border-radius: 16px;
-    color: var(--accent);
+    border: 3px dashed var(--bg);
+    padding: 70px 90px;
+    border-radius: var(--radius);
+    color: var(--bg);
     font-family: var(--font-display);
     font-size: 1.6rem;
     letter-spacing: 1.5px;
-    background: rgba(212,175,55,0.04);
+    background: rgba(255,204,51,0.06);
   }
 
-  /* Hidden file input */
   #fileInput { display: none; }
+
+  /* ============================================================
+     Responsive
+     ============================================================ */
+  @media (max-width: 1100px) {
+    .stats { grid-template-columns: repeat(3, 1fr); }
+    .filters { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 820px) {
+    .header-logo-right { display: none; }
+  }
+  @media (max-width: 720px) {
+    .app { padding: 14px; }
+    .header { flex-direction: column; align-items: flex-start; gap: 14px; padding: 16px 18px; }
+    .header-right { width: 100%; flex-direction: column; align-items: stretch; gap: 10px; }
+    select.header-select { min-width: 0; width: 100%; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .titles h1 { font-size: 1.5rem; }
+  }
 </style>
 </head>
 <body>
@@ -440,34 +540,36 @@
 
 <div class="app">
 
+  <!-- Header -->
   <header class="header">
     <div class="header-left">
-      <div class="crest">P</div>
+      <img class="header-logo" src="logo.png" alt="Panetolikos FC" />
       <div class="titles">
         <h1>Game Performance Dashboard</h1>
-        <div class="subtitle">Team: <strong>Panetolikos FC</strong> · Match-day external load</div>
+        <div class="meta-row">
+          <span>Team:<strong>Panetolikos FC</strong></span>
+          <span>Selected game:<strong id="metaGame">—</strong></span>
+          <span>Players:<strong id="metaPlayers">—</strong></span>
+        </div>
       </div>
     </div>
     <div class="header-right">
-      <button class="refresh-btn" id="refreshBtn" title="Replace CSV (or drag-drop a file anywhere)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="23 4 23 10 17 10"/>
-          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-        </svg>
-        Replace CSV
-      </button>
-      <input type="file" id="fileInput" accept=".csv" />
+      <div class="header-game-wrap">
+        <span class="header-label">Game</span>
+        <select class="header-select" id="gameSelect"></select>
+      </div>
+      <div class="header-stat-pill" id="headerStatPill">— drills selected</div>
+      <img class="header-logo-right" src="logo.png" alt="Panetolikos FC" />
     </div>
   </header>
 
+  <!-- KPI Stat cards -->
+  <div class="stats" id="statsRow"></div>
+
   <!-- Filters -->
   <div class="filters">
-    <div class="filter">
-      <div class="filter-label">Game</div>
-      <select class="dropdown" id="gameSelect"></select>
-    </div>
-    <div class="filter">
-      <div class="filter-label">Drill</div>
+    <div class="filter-card">
+      <div class="label">Drill</div>
       <div class="multi-wrap">
         <button class="multi-trigger" id="drillTrigger">
           <span id="drillTriggerLabel">All drills</span>
@@ -482,74 +584,72 @@
         </div>
       </div>
     </div>
-    <div class="filter">
-      <div class="filter-label">Metric</div>
-      <select class="dropdown" id="metricSelect"></select>
+    <div class="filter-card">
+      <div class="label">Metric</div>
+      <div class="metric-pills" id="metricPills"></div>
     </div>
   </div>
-
-  <!-- Summary stats -->
-  <div class="stats" id="statsRow"></div>
 
   <!-- Performance table -->
   <div class="card">
     <div class="card-header">
-      <div class="card-title">Performance Table</div>
+      <div>
+        <div class="card-title">Performance Table</div>
+      </div>
       <div class="card-meta">
         Metric: <span class="metric-name" id="metricNameLabel">—</span>
         · <span id="rowCountLabel">0 players</span>
       </div>
     </div>
-    <div id="tableWrapper">
-      <div class="loading">Loading data…</div>
+    <div class="table-wrap">
+      <div class="table-inner" id="tableWrapper">
+        <div class="loading">Loading data…</div>
+      </div>
     </div>
   </div>
 
   <div class="footer">
-    <div>Drop a new CSV anywhere to refresh — no model changes needed.</div>
-    <div>Default file: <code>1_Final_Game-Report_FINAL.csv</code></div>
+    <div>Data refresh: <span class="replace-link" id="replaceLink">Replace CSV</span> or drop a file anywhere on the page.</div>
+    <div>Source: <code>1_Final_Game-Report_FINAL.csv</code></div>
+    <input type="file" id="fileInput" accept=".csv" />
   </div>
 
 </div>
 
 <script>
-/* ======================================================================
-   Configuration: metric definitions
-   Maps original CSV columns -> display name in the dashboard.
-   Resilient to small naming variants in the source CSV.
-   ====================================================================== */
+/* ============================================================
+   Configuration
+   ============================================================ */
 const METRIC_DEFS = [
-  { display: 'TD',       candidates: ['distanceTotal'],                      decimals: 1 },
-  { display: 'mtr/min',  candidates: ['distancePerMin'],                     decimals: 2 },
-  { display: 'HSR',      candidates: ['highSpeedRunningAbs'],                decimals: 1 },
-  { display: 'HSR/min',  candidates: ['hsrAbsPerMin'],                       decimals: 2 },
-  { display: 'Acc',      candidates: ['accelerationAbs', 'accelerationsAbs'],decimals: 0 },
-  { display: 'Acc/min',  candidates: ['accelerationPerMinAbs','accelsPerMinAbs'], decimals: 2 },
-  { display: 'Dec',      candidates: ['decelerationAbs', 'decelerationsAbs'],decimals: 0 },
-  { display: 'Dec/min',  candidates: ['decelerationPerMinAbs','decelsPerMinAbs'], decimals: 2 },
-  { display: 'mV',       candidates: ['maxSpeed'],                           decimals: 2 }
+  { display: 'TD',       candidates: ['distanceTotal'],                                       decimals: 0, unit: 'm'   },
+  { display: 'mtr/min',  candidates: ['distancePerMin'],                                      decimals: 1, unit: ''    },
+  { display: 'HSR',      candidates: ['highSpeedRunningAbs'],                                 decimals: 1, unit: 'm'   },
+  { display: 'HSR/min',  candidates: ['hsrAbsPerMin'],                                        decimals: 2, unit: ''    },
+  { display: 'Acc',      candidates: ['accelerationAbs', 'accelerationsAbs'],                 decimals: 0, unit: ''    },
+  { display: 'Acc/min',  candidates: ['accelerationPerMinAbs','accelsPerMinAbs'],             decimals: 2, unit: ''    },
+  { display: 'Dec',      candidates: ['decelerationAbs', 'decelerationsAbs'],                 decimals: 0, unit: ''    },
+  { display: 'Dec/min',  candidates: ['decelerationPerMinAbs','decelsPerMinAbs'],             decimals: 2, unit: ''    },
+  { display: 'mV',       candidates: ['maxSpeed'],                                            decimals: 2, unit: 'km/h'}
 ];
 
 const DEFAULT_CSV_PATH = '1_Final_Game-Report_FINAL.csv';
 
-/* ======================================================================
+/* ============================================================
    State
-   ====================================================================== */
+   ============================================================ */
 const state = {
-  rows: [],                  // raw rows from CSV
-  resolvedMetrics: [],       // [{display, key, decimals}] - actual columns present
-  selectedGame: null,        // { sessionTitle, drillDate, label }
-  selectedDrills: new Set(), // drillTitles
-  selectedMetric: null,      // display name
+  rows: [],
+  resolvedMetrics: [],
+  selectedDrills: new Set(),
+  selectedMetric: null,
   sortKey: null,
   sortDir: 'desc'
 };
 
-/* ======================================================================
+/* ============================================================
    Helpers
-   ====================================================================== */
+   ============================================================ */
 function normWS(s) { return (s || '').toString().replace(/\s+/g, ' ').trim(); }
-
 function parseDate(s) {
   if (!s) return null;
   const parts = s.split('/');
@@ -558,38 +658,37 @@ function parseDate(s) {
   if (!m || !d || !y) return null;
   return new Date(y, m - 1, d);
 }
-
 function formatDate(s) {
   const d = parseDate(s);
   if (!d) return s;
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
-
 function num(v) {
   if (v === null || v === undefined || v === '') return null;
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
 }
-
 function fmtNum(n, decimals = 1) {
   if (n === null || n === undefined || !Number.isFinite(n)) return '—';
   return n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
+function fmtCompact(n, decimals = 1) {
+  if (n === null || n === undefined || !Number.isFinite(n)) return '—';
+  if (Math.abs(n) >= 10000) return (n / 1000).toLocaleString('en-US', { maximumFractionDigits: 1 }) + 'k';
+  return fmtNum(n, decimals);
+}
 
-/* ======================================================================
-   Data loading
-   ====================================================================== */
+/* ============================================================
+   CSV loading
+   ============================================================ */
 function loadCSVFromText(text) {
   Papa.parse(text, {
     header: true,
     skipEmptyLines: true,
     transformHeader: h => h.trim(),
     complete: (res) => {
-      try {
-        ingest(res.data);
-      } catch (e) {
-        showError('Failed to parse CSV: ' + e.message);
-      }
+      try { ingest(res.data); }
+      catch (e) { showError('Failed to parse CSV: ' + e.message); }
     },
     error: (err) => showError('Parse error: ' + err.message)
   });
@@ -602,9 +701,7 @@ function loadDefaultCSV() {
       return r.text();
     })
     .then(loadCSVFromText)
-    .catch(err => showError(
-      err.message + '. Drop a CSV file anywhere on the page or use the “Replace CSV” button.'
-    ));
+    .catch(err => showError(err.message + '. Drop a CSV file anywhere or click "Replace CSV".'));
 }
 
 function showError(msg) {
@@ -612,48 +709,31 @@ function showError(msg) {
     '<div class="error-msg">⚠ ' + msg + '</div>';
 }
 
-/* ======================================================================
-   Ingest data
-   ====================================================================== */
+/* ============================================================
+   Ingest
+   ============================================================ */
 function ingest(rows) {
-  if (!rows || rows.length === 0) {
-    showError('CSV contains no rows.');
-    return;
-  }
+  if (!rows || rows.length === 0) return showError('CSV contains no rows.');
 
-  // Detect which metric columns are actually present (handles spelling variants)
   const headers = Object.keys(rows[0]);
   state.resolvedMetrics = METRIC_DEFS.map(def => {
     const key = def.candidates.find(c => headers.includes(c));
-    return key ? { display: def.display, key, decimals: def.decimals } : null;
+    return key ? { display: def.display, key, decimals: def.decimals, unit: def.unit } : null;
   }).filter(Boolean);
 
-  if (state.resolvedMetrics.length === 0) {
-    showError('No recognised metric columns found in CSV.');
-    return;
-  }
+  if (state.resolvedMetrics.length === 0) return showError('No recognised metric columns found in CSV.');
+  if (!headers.includes('playerLastName')) return showError('CSV missing required column: playerLastName');
+  if (!headers.includes('totalTime'))      return showError('CSV missing required column: totalTime');
 
-  // Required columns
-  if (!headers.includes('playerLastName')) {
-    showError('CSV missing required column: playerLastName');
-    return;
-  }
-  if (!headers.includes('totalTime')) {
-    showError('CSV missing required column: totalTime');
-    return;
-  }
-
-  // Normalise sessionTitle (collapse whitespace) for cleaner dropdown
   state.rows = rows.map(r => ({
     ...r,
     sessionTitle: normWS(r.sessionTitle),
-    drillTitle:  normWS(r.drillTitle),
-    drillDate:   normWS(r.drillDate)
+    drillTitle:   normWS(r.drillTitle),
+    drillDate:    normWS(r.drillDate)
   }));
 
   populateGameSelect();
-  populateMetricSelect();
-  // Default game = most recent
+  populateMetricPills();
   const gameSel = document.getElementById('gameSelect');
   if (gameSel.options.length > 0) {
     gameSel.selectedIndex = 0;
@@ -661,27 +741,21 @@ function ingest(rows) {
   }
 }
 
-/* ======================================================================
-   Game slicer (sessionTitle + drillDate combined)
-   ====================================================================== */
+/* ============================================================
+   Game select
+   ============================================================ */
 function populateGameSelect() {
   const seen = new Map();
   for (const r of state.rows) {
     if (!r.sessionTitle || !r.drillDate) continue;
     const key = r.sessionTitle + '||' + r.drillDate;
     if (!seen.has(key)) {
-      seen.set(key, {
-        sessionTitle: r.sessionTitle,
-        drillDate: r.drillDate,
-        date: parseDate(r.drillDate)
-      });
+      seen.set(key, { sessionTitle: r.sessionTitle, drillDate: r.drillDate, date: parseDate(r.drillDate) });
     }
   }
-  const games = [...seen.values()].sort((a, b) => {
-    if (a.date && b.date) return b.date - a.date;
-    return a.sessionTitle.localeCompare(b.sessionTitle);
-  });
-
+  const games = [...seen.values()].sort((a, b) =>
+    (a.date && b.date) ? b.date - a.date : a.sessionTitle.localeCompare(b.sessionTitle)
+  );
   const sel = document.getElementById('gameSelect');
   sel.innerHTML = '';
   games.forEach(g => {
@@ -699,9 +773,9 @@ function getSelectedGame() {
   return { sessionTitle, drillDate };
 }
 
-/* ======================================================================
-   Drill slicer (multi-select, depends on selected game)
-   ====================================================================== */
+/* ============================================================
+   Drill select
+   ============================================================ */
 function populateDrillSelect() {
   const game = getSelectedGame();
   const drills = new Set();
@@ -709,23 +783,17 @@ function populateDrillSelect() {
     if (game && (r.sessionTitle !== game.sessionTitle || r.drillDate !== game.drillDate)) continue;
     if (r.drillTitle) drills.add(r.drillTitle);
   }
-  // Sort: 'Entire Session' first, then alphabetically
   const sortedDrills = [...drills].sort((a, b) => {
     if (a.toLowerCase() === 'entire session') return -1;
     if (b.toLowerCase() === 'entire session') return 1;
     return a.localeCompare(b);
   });
 
-  // Default: select 'Entire Session' if present, otherwise all drills
   state.selectedDrills = new Set();
   const entire = sortedDrills.find(d => d.toLowerCase() === 'entire session');
-  if (entire) {
-    state.selectedDrills.add(entire);
-  } else {
-    sortedDrills.forEach(d => state.selectedDrills.add(d));
-  }
+  if (entire) state.selectedDrills.add(entire);
+  else sortedDrills.forEach(d => state.selectedDrills.add(d));
 
-  // Render
   const container = document.getElementById('drillOptions');
   container.innerHTML = '';
   sortedDrills.forEach(d => {
@@ -743,11 +811,9 @@ function populateDrillSelect() {
     });
     const txt = document.createElement('span');
     txt.textContent = d;
-    lbl.appendChild(cb);
-    lbl.appendChild(txt);
+    lbl.appendChild(cb); lbl.appendChild(txt);
     container.appendChild(lbl);
   });
-
   updateDrillTriggerLabel();
 }
 
@@ -757,92 +823,87 @@ function updateDrillTriggerLabel() {
   const label = document.getElementById('drillTriggerLabel');
   const pill = document.getElementById('drillCount');
 
-  if (count === 0) {
-    label.textContent = 'No drills selected';
-  } else if (count === 1) {
-    label.textContent = [...state.selectedDrills][0];
-  } else if (count === totalOptions) {
-    label.textContent = 'All drills';
-  } else {
-    label.textContent = count + ' drills selected';
-  }
+  if (count === 0)                  label.textContent = 'No drills selected';
+  else if (count === 1)             label.textContent = [...state.selectedDrills][0];
+  else if (count === totalOptions)  label.textContent = 'All drills';
+  else                              label.textContent = count + ' drills selected';
   pill.textContent = count;
+
+  const headerPill = document.getElementById('headerStatPill');
+  headerPill.textContent = count + (count === 1 ? ' drill selected' : ' drills selected');
 }
 
-/* ======================================================================
-   Metric slicer
-   ====================================================================== */
-function populateMetricSelect() {
-  const sel = document.getElementById('metricSelect');
-  sel.innerHTML = '';
-  state.resolvedMetrics.forEach(m => {
-    const opt = document.createElement('option');
-    opt.value = m.display;
-    opt.textContent = m.display;
-    sel.appendChild(opt);
+/* ============================================================
+   Metric pills
+   ============================================================ */
+function populateMetricPills() {
+  const container = document.getElementById('metricPills');
+  container.innerHTML = '';
+  state.resolvedMetrics.forEach((m, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'pill' + (idx === 0 ? ' active' : '');
+    btn.textContent = m.display;
+    btn.dataset.metric = m.display;
+    btn.addEventListener('click', () => {
+      state.selectedMetric = m.display;
+      document.querySelectorAll('#metricPills .pill').forEach(p =>
+        p.classList.toggle('active', p.dataset.metric === m.display));
+      state.sortKey = 'Metric';
+      state.sortDir = 'desc';
+      render();
+    });
+    container.appendChild(btn);
   });
   state.selectedMetric = state.resolvedMetrics[0].display;
-  sel.value = state.selectedMetric;
 }
 
-/* ======================================================================
-   Render
-   ====================================================================== */
 function getCurrentMetric() {
   return state.resolvedMetrics.find(m => m.display === state.selectedMetric);
 }
 
+/* ============================================================
+   Aggregation
+   ============================================================ */
 function buildTableData() {
   const game = getSelectedGame();
   const metric = getCurrentMetric();
   if (!game || !metric) return [];
 
-  // Filter rows
   const filtered = state.rows.filter(r =>
     r.sessionTitle === game.sessionTitle &&
     r.drillDate === game.drillDate &&
     state.selectedDrills.has(r.drillTitle)
   );
 
-  // Aggregate per player: sum metric & sum time across selected drills
-  // (For mV / max-type metrics we take the max instead of the sum.)
-  const isMaxMetric = metric.display === 'mV';
-  // For "/min" rate metrics, recompute as weighted average using time
+  const isMaxMetric  = metric.display === 'mV';
   const isRateMetric = /\/min$/i.test(metric.display);
 
   const byPlayer = new Map();
   for (const r of filtered) {
     const player = r.playerLastName;
     if (!player) continue;
-
     const t = num(r.totalTime) || 0;
     const v = num(r[metric.key]);
-
     if (!byPlayer.has(player)) {
-      byPlayer.set(player, { player, time: 0, metricSum: 0, metricMax: -Infinity, metricWeighted: 0 });
+      byPlayer.set(player, { player, time: 0, sum: 0, max: -Infinity, weighted: 0 });
     }
     const p = byPlayer.get(player);
     p.time += t;
     if (v !== null) {
-      p.metricSum += v;
-      if (v > p.metricMax) p.metricMax = v;
-      p.metricWeighted += v * t;
+      p.sum += v;
+      if (v > p.max) p.max = v;
+      p.weighted += v * t;
     }
   }
 
   const out = [...byPlayer.values()].map(p => {
     let metricVal;
-    if (isMaxMetric) {
-      metricVal = (p.metricMax === -Infinity) ? null : p.metricMax;
-    } else if (isRateMetric) {
-      metricVal = (p.time > 0) ? (p.metricWeighted / p.time) : null;
-    } else {
-      metricVal = p.metricSum;
-    }
+    if (isMaxMetric)       metricVal = (p.max === -Infinity) ? null : p.max;
+    else if (isRateMetric) metricVal = (p.time > 0) ? (p.weighted / p.time) : null;
+    else                   metricVal = p.sum;
     return { Player: p.player, Time: p.time, Metric: metricVal };
   });
 
-  // Sort
   const sortKey = state.sortKey || 'Metric';
   const dir = state.sortDir === 'asc' ? 1 : -1;
   out.sort((a, b) => {
@@ -852,50 +913,138 @@ function buildTableData() {
     const bn = (bv === null || bv === undefined) ? -Infinity : bv;
     return dir * (an - bn);
   });
-
   return out;
+}
+
+/* ============================================================
+   KPI dial cards
+   ============================================================ */
+function makeDialSVG(percent, color) {
+  // Semi-circular dial. percent: 0..1
+  const r = 58;
+  const cx = 75, cy = 75;
+  const start = Math.PI;          // left side (180°)
+  const end   = 0;                // right side (0°)
+  const angle = start + (end - start) * Math.max(0, Math.min(1, percent));
+
+  const x1 = cx + r * Math.cos(start);
+  const y1 = cy + r * Math.sin(start);
+  const xV = cx + r * Math.cos(angle);
+  const yV = cy + r * Math.sin(angle);
+  const x2 = cx + r * Math.cos(end);
+  const y2 = cy + r * Math.sin(end);
+
+  // Track (background)
+  const trackPath = `M ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2}`;
+  // Filled portion
+  const fillPath  = `M ${x1} ${y1} A ${r} ${r} 0 0 1 ${xV} ${yV}`;
+
+  return `
+    <svg viewBox="0 0 150 84">
+      <path d="${trackPath}" fill="none" stroke="rgba(15,44,92,0.13)" stroke-width="10" stroke-linecap="round"/>
+      <path d="${fillPath}"  fill="none" stroke="${color}"           stroke-width="10" stroke-linecap="round"/>
+    </svg>
+  `;
+}
+
+function colorForValue(percent) {
+  // Match wellness-rpe palette: yellow/gold at low/mid, green at high, orange when high-load
+  if (percent >= 0.85) return '#2D9B3F'; // green
+  if (percent >= 0.55) return '#FFCC33'; // yellow
+  return '#E07B1F';                       // orange
 }
 
 function renderStats(data) {
   const metric = getCurrentMetric();
-  const game = getSelectedGame();
   const row = document.getElementById('statsRow');
-
-  if (!data.length || !metric) {
-    row.innerHTML = '';
-    return;
-  }
+  if (!metric || !data.length) { row.innerHTML = ''; return; }
 
   const players = data.length;
   const totalTime = data.reduce((s, r) => s + (r.Time || 0), 0);
+  const avgTime = players ? totalTime / players : 0;
+
   const metricVals = data.map(r => r.Metric).filter(v => v !== null && Number.isFinite(v));
   const sum = metricVals.reduce((s, v) => s + v, 0);
-  const avg = metricVals.length ? sum / metricVals.length : null;
-  const max = metricVals.length ? Math.max(...metricVals) : null;
+  const avg = metricVals.length ? sum / metricVals.length : 0;
+  const max = metricVals.length ? Math.max(...metricVals) : 0;
+  const min = metricVals.length ? Math.min(...metricVals) : 0;
   const topPlayer = data.find(r => r.Metric === max);
 
+  // For each KPI we build a dial showing value / max-on-scale
   const dec = metric.decimals;
 
-  row.innerHTML = `
-    <div class="stat">
-      <div class="label">Players</div>
-      <div class="value">${players}</div>
-    </div>
-    <div class="stat">
-      <div class="label">Total Time</div>
-      <div class="value">${fmtNum(totalTime, 0)}<span class="unit">min</span></div>
-    </div>
-    <div class="stat">
-      <div class="label">Avg ${metric.display}</div>
-      <div class="value">${fmtNum(avg, dec)}</div>
-    </div>
-    <div class="stat">
-      <div class="label">Top ${metric.display}</div>
-      <div class="value">${fmtNum(max, dec)}<span class="unit">${topPlayer ? '· ' + topPlayer.Player : ''}</span></div>
-    </div>
-  `;
+  const cards = [
+    {
+      label: 'Players',
+      value: players,
+      decimals: 0,
+      pct: 1.0,
+      color: '#0F2C5C',
+      sub: `Time avg <b>${fmtNum(avgTime, 0)}</b> min`
+    },
+    {
+      label: 'Total Time',
+      value: totalTime,
+      decimals: 0,
+      unit: 'min',
+      pct: 0.85,
+      color: '#FFCC33',
+      sub: `Per player <b>${fmtNum(avgTime, 0)}</b>`
+    },
+    {
+      label: `Avg ${metric.display}`,
+      value: fmtCompact(avg, dec),
+      raw: avg,
+      decimals: dec,
+      pct: max > 0 ? avg / max : 0,
+      color: '#FFCC33',
+      sub: `Min <b>${fmtCompact(min, dec)}</b>`
+    },
+    {
+      label: `Top ${metric.display}`,
+      value: fmtCompact(max, dec),
+      raw: max,
+      decimals: dec,
+      pct: 1.0,
+      color: '#2D9B3F',
+      sub: topPlayer ? `<b>${topPlayer.Player}</b>` : ''
+    },
+    {
+      label: `Total ${metric.display}`,
+      value: fmtCompact(sum, dec),
+      raw: sum,
+      decimals: dec,
+      pct: 0.95,
+      color: '#E07B1F',
+      sub: `Across <b>${players}</b> players`
+    }
+  ];
+
+  row.innerHTML = cards.map(c => {
+    const valueText = (typeof c.value === 'string') ? c.value : fmtNum(c.value, c.decimals || 0);
+    return `
+      <div class="stat-card">
+        <div class="label">${c.label}</div>
+        <div class="dial-wrap">
+          ${makeDialSVG(c.pct, c.color)}
+          <div class="dial-value" style="color:${c.color}">${valueText}</div>
+        </div>
+        <div class="dial-pct-row">
+          <span>${c.sub || ''}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Header meta
+  const game = getSelectedGame();
+  document.getElementById('metaGame').textContent = game ? formatDate(game.drillDate) : '—';
+  document.getElementById('metaPlayers').textContent = players;
 }
 
+/* ============================================================
+   Table render
+   ============================================================ */
 function renderTable(data) {
   const wrap = document.getElementById('tableWrapper');
   const metric = getCurrentMetric();
@@ -908,12 +1057,16 @@ function renderTable(data) {
 
   const dec = metric.decimals;
   const sortKey = state.sortKey || 'Metric';
-
   const arrow = (col) => sortKey === col
     ? `<span class="sort-icon">${state.sortDir === 'asc' ? '▲' : '▼'}</span>`
     : `<span class="sort-icon">↕</span>`;
-
   const headerCls = (col) => sortKey === col ? 'sorted' : '';
+
+  // Identify top 3 by metric to highlight
+  const ranked = [...data].sort((a,b) => (b.Metric ?? -Infinity) - (a.Metric ?? -Infinity));
+  const top1 = ranked[0]?.Player;
+  const top2 = ranked[1]?.Player;
+  const top3 = ranked[2]?.Player;
 
   let html = `
     <table>
@@ -921,33 +1074,32 @@ function renderTable(data) {
         <tr>
           <th class="${headerCls('Player')}" data-sort="Player">Player ${arrow('Player')}</th>
           <th class="${headerCls('Time')}" data-sort="Time" style="text-align:right">Time (min) ${arrow('Time')}</th>
-          <th class="${headerCls('Metric')}" data-sort="Metric" style="text-align:right">${metric.display} ${arrow('Metric')}</th>
+          <th class="${headerCls('Metric')}" data-sort="Metric" style="text-align:right">${metric.display}${metric.unit ? ' (' + metric.unit + ')' : ''} ${arrow('Metric')}</th>
         </tr>
       </thead>
       <tbody>
   `;
   for (const r of data) {
+    let badgeCls = '';
+    if (r.Player === top1) badgeCls = 'top1';
+    else if (r.Player === top2) badgeCls = 'top2';
+    else if (r.Player === top3) badgeCls = 'top3';
     html += `
       <tr>
         <td class="player-cell">${r.Player}</td>
         <td class="numeric">${fmtNum(r.Time, 1)}</td>
-        <td class="metric-value"><span class="pos-bar">${fmtNum(r.Metric, dec)}</span></td>
+        <td class="metric-value"><span class="bar-bg ${badgeCls}">${fmtNum(r.Metric, dec)}</span></td>
       </tr>
     `;
   }
   html += '</tbody></table>';
   wrap.innerHTML = html;
 
-  // Sort handlers
   wrap.querySelectorAll('th[data-sort]').forEach(th => {
     th.addEventListener('click', () => {
       const k = th.dataset.sort;
-      if (state.sortKey === k) {
-        state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
-      } else {
-        state.sortKey = k;
-        state.sortDir = (k === 'Player') ? 'asc' : 'desc';
-      }
+      if (state.sortKey === k) state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
+      else { state.sortKey = k; state.sortDir = (k === 'Player') ? 'asc' : 'desc'; }
       render();
     });
   });
@@ -963,9 +1115,9 @@ function render() {
   renderTable(data);
 }
 
-/* ======================================================================
+/* ============================================================
    Event wiring
-   ====================================================================== */
+   ============================================================ */
 function onGameChange() {
   populateDrillSelect();
   render();
@@ -973,15 +1125,6 @@ function onGameChange() {
 
 document.getElementById('gameSelect').addEventListener('change', onGameChange);
 
-document.getElementById('metricSelect').addEventListener('change', (e) => {
-  state.selectedMetric = e.target.value;
-  // reset to default sort on metric change (descending by metric)
-  state.sortKey = 'Metric';
-  state.sortDir = 'desc';
-  render();
-});
-
-// Multi-select drill panel
 const drillTrigger = document.getElementById('drillTrigger');
 const drillPanel = document.getElementById('drillPanel');
 drillTrigger.addEventListener('click', (e) => {
@@ -1010,9 +1153,8 @@ document.getElementById('drillClear').addEventListener('click', () => {
   render();
 });
 
-// File replace
 const fileInput = document.getElementById('fileInput');
-document.getElementById('refreshBtn').addEventListener('click', () => fileInput.click());
+document.getElementById('replaceLink').addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -1021,7 +1163,6 @@ fileInput.addEventListener('change', (e) => {
   reader.readAsText(file);
 });
 
-// Drag & drop anywhere
 const dropzone = document.getElementById('dropzone');
 let dragCounter = 0;
 window.addEventListener('dragenter', (e) => {
@@ -1030,12 +1171,9 @@ window.addEventListener('dragenter', (e) => {
   dropzone.classList.add('active');
 });
 window.addEventListener('dragover', (e) => e.preventDefault());
-window.addEventListener('dragleave', (e) => {
+window.addEventListener('dragleave', () => {
   dragCounter--;
-  if (dragCounter <= 0) {
-    dragCounter = 0;
-    dropzone.classList.remove('active');
-  }
+  if (dragCounter <= 0) { dragCounter = 0; dropzone.classList.remove('active'); }
 });
 window.addEventListener('drop', (e) => {
   e.preventDefault();
@@ -1043,18 +1181,15 @@ window.addEventListener('drop', (e) => {
   dropzone.classList.remove('active');
   const file = e.dataTransfer.files[0];
   if (!file) return;
-  if (!file.name.toLowerCase().endsWith('.csv')) {
-    showError('Please drop a .csv file.');
-    return;
-  }
+  if (!file.name.toLowerCase().endsWith('.csv')) { showError('Please drop a .csv file.'); return; }
   const reader = new FileReader();
   reader.onload = (ev) => loadCSVFromText(ev.target.result);
   reader.readAsText(file);
 });
 
-/* ======================================================================
+/* ============================================================
    Boot
-   ====================================================================== */
+   ============================================================ */
 loadDefaultCSV();
 </script>
 </body>
