@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Daily Report Running Load — Panetolikos FC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  :root {
+    --bg:           #FFCC33;
+    --navy:         #0F2C5C;
+    --navy-deep:    #0a1f42;
+    --card:         #FBF2C7;
+    --card-border:  rgba(15, 44, 92, 0.10);
+    --text:         #0F2C5C;
+    --text-muted:   #5a6788;
+    --pill-border:  rgba(15, 44, 92, 0.25);
+    --green:        #2D9B3F;
+    --orange:       #E07B1F;
+    --red:          #d64545;
+    --shadow:       0 2px 8px rgba(15, 44, 92, 0.10);
+    --radius:       14px;
+    --radius-sm:    8px;
+    --font-display: 'Bebas Neue', 'Oswald', Impact, sans-serif;
+    --font-body:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app {
+    max-width: 1740px;
+    margin: 0 auto;
+    padding: 22px 22px 60px;
+  }
+
+  /* ======= Header ======= */
+  .header {
+    background: var(--navy);
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 20px 26px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 18px;
+  }
+  .header-left { display: flex; align-items: center; gap: 18px; flex: 1; min-width: 0; }
+  .header-logo {
+    width: 64px; height: 64px;
+    object-fit: contain;
+    flex-shrink: 0;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+  }
+  .header-logo-right {
+    width: 56px; height: 56px;
+    object-fit: contain;
+    flex-shrink: 0;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+  }
+  .titles { min-width: 0; }
+  .titles h1 {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    letter-spacing: 1.5px;
+    font-weight: 400;
+    color: #fff;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .titles .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 22px;
+    font-size: 0.86rem;
+    color: rgba(255,255,255,0.85);
+  }
+  .titles .meta-row span strong {
+    color: #fff;
+    font-weight: 700;
+    margin-left: 4px;
+  }
+
+  /* ======= Hub button — matches Game dashboard ======= */
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .back-home-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg);
+    color: var(--navy);
+    border: 1.5px solid var(--bg);
+    padding: 10px 16px;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+    transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease;
+  }
+  .back-home-btn:hover {
+    background: transparent;
+    color: var(--bg);
+    transform: translateX(-3px);
+  }
+  .back-home-btn svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+  .header-stat-pill {
+    border: 1.5px solid var(--bg);
+    color: var(--bg);
+    padding: 10px 16px;
+    border-radius: var(--radius-sm);
+    font-weight: 700;
+    font-size: 0.88rem;
+    white-space: nowrap;
+  }
+
+  /* ======= Filter section ======= */
+  .filters {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+  .filter-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 14px 18px;
+  }
+  .filter-card .label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 1.4px;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .filter-card .hint {
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0.4px;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+  }
+
+  /* Date select */
+  .date-select {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--pill-border);
+    background: #fff;
+    color: var(--navy);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%230F2C5C' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+  }
+  .date-select:focus {
+    outline: 2px solid var(--navy);
+    outline-offset: 1px;
+  }
+
+  /* Multi-select for drills */
+  .multi-wrap { position: relative; }
+  .multi-trigger {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--pill-border);
+    background: #fff;
+    color: var(--navy);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  .multi-trigger .trigger-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .multi-trigger .count-pill {
+    background: var(--navy);
+    color: var(--bg);
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .multi-trigger:focus, .multi-trigger.open {
+    outline: 2px solid var(--navy);
+    outline-offset: 1px;
+  }
+  .multi-panel {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0; right: 0;
+    background: #fff;
+    border: 1.5px solid var(--pill-border);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 8px 24px rgba(15, 44, 92, 0.18);
+    max-height: 360px;
+    overflow-y: auto;
+    z-index: 50;
+  }
+  .multi-panel.open { display: block; }
+  .multi-actions {
+    display: flex;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--card-border);
+    flex-wrap: wrap;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 1;
+  }
+  .multi-actions .mini-btn {
+    background: var(--bg);
+    border: none;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--navy);
+    cursor: pointer;
+    font-family: var(--font-body);
+  }
+  .multi-actions .mini-btn:hover { background: #ffd966; }
+  .multi-actions .info {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-left: auto;
+  }
+  .multi-search {
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    border-bottom: 1px solid var(--card-border);
+    font-family: var(--font-body);
+    font-size: 0.86rem;
+    color: var(--navy);
+    outline: none;
+    position: sticky;
+    top: 41px;
+    background: #fff;
+    z-index: 1;
+  }
+  .multi-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 0.88rem;
+    color: var(--navy);
+    border-bottom: 1px solid rgba(15, 44, 92, 0.04);
+    user-select: none;
+  }
+  .multi-option:hover { background: rgba(255, 204, 51, 0.18); }
+  .multi-option input[type="checkbox"] {
+    width: 16px; height: 16px;
+    accent-color: var(--navy);
+    flex-shrink: 0;
+  }
+  .multi-option .opt-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .multi-option.hidden { display: none; }
+
+  /* ======= Table card ======= */
+  .table-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .table-header {
+    padding: 18px 22px 14px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .table-title {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    letter-spacing: 1.2px;
+    color: var(--navy);
+    line-height: 1;
+  }
+  .table-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+  .table-meta {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+  .table-meta strong { color: var(--navy); font-weight: 700; }
+
+  .table-wrap {
+    padding: 0 14px 14px;
+  }
+  .table-inner {
+    background: #fff;
+    border-radius: var(--radius-sm);
+    overflow: auto;
+    border: 1px solid var(--card-border);
+    max-height: calc(100vh - 280px);
+  }
+
+  table.dr-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.78rem;
+  }
+  /* Sticky header */
+  .dr-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--navy);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 9px 5px;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    border-bottom: 2px solid rgba(255,255,255,0.10);
+  }
+  .dr-table thead th:first-child {
+    text-align: center;
+    position: sticky;
+    left: 0;
+    z-index: 3;
+  }
+  .dr-table thead th:hover { background: var(--navy-deep); }
+  .dr-table thead th .sort-icon {
+    display: inline-block;
+    margin-left: 5px;
+    opacity: 0.5;
+    font-size: 0.7rem;
+  }
+  .dr-table thead th.sorted .sort-icon { opacity: 1; color: var(--bg); }
+  .dr-table thead th.col-group {
+    border-left: 2px solid rgba(255, 204, 51, 0.4);
+  }
+  .dr-table tbody tr {
+    transition: background 0.1s ease;
+  }
+  .dr-table tbody tr:hover {
+    background: rgba(255, 204, 51, 0.10);
+  }
+  .dr-table tbody td {
+    padding: 5px 5px;
+    border-bottom: 1px solid rgba(15, 44, 92, 0.06);
+    color: var(--navy);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .dr-table tbody td:first-child {
+    text-align: center;
+    font-weight: 700;
+    position: sticky;
+    left: 0;
+    background: #fff;
+    z-index: 1;
+    border-right: 1px solid var(--card-border);
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .dr-table tbody tr:hover td:first-child { background: #fff8dc; }
+  .dr-table tbody td.col-group {
+    border-left: 2px solid rgba(15, 44, 92, 0.10);
+  }
+  .dr-table tbody td.empty {
+    color: var(--text-muted);
+    opacity: 0.4;
+  }
+  /* Position cell smaller and abbreviated */
+  .dr-table tbody td.col-pos {
+    color: var(--text-muted);
+    font-size: 0.74rem;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  /* Heatmap shading is applied inline via background-color */
+
+  /* Loading / error states */
+  .empty-state, .error-msg {
+    padding: 40px 22px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+  }
+  .error-msg {
+    color: var(--red);
+    font-weight: 600;
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .filters { grid-template-columns: 1fr; }
+    .titles h1 { font-size: 1.5rem; }
+    .header-logo-right { display: none; }
+    .header-stat-pill { display: none; }
+    .table-inner { max-height: none; }
+  }
+  @media (max-width: 600px) {
+    .app { padding: 14px 12px 40px; }
+    .header { padding: 14px 16px; flex-wrap: wrap; }
+    .header-logo { width: 48px; height: 48px; }
+    .titles h1 { font-size: 1.3rem; letter-spacing: 0.8px; }
+    .titles .meta-row { font-size: 0.78rem; gap: 12px; }
+    .back-home-btn { padding: 8px 12px; font-size: 0.82rem; }
+    .dr-table { font-size: 0.76rem; }
+    .dr-table tbody td { padding: 5px 6px; }
+    .dr-table thead th { padding: 8px 6px; font-size: 0.62rem; }
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <div class="header-left">
+        <img src="../homepage/logo.png" alt="Panetolikos FC" class="header-logo" onerror="this.style.display='none'">
+        <div class="titles">
+          <h1>Daily Report Running Load</h1>
+          <div class="meta-row">
+            <span>Date: <strong id="metaDate">—</strong></span>
+            <span>Drills: <strong id="metaDrills">—</strong></span>
+            <span>Players: <strong id="metaPlayers">0</strong></span>
+          </div>
+        </div>
+      </div>
+      <div class="header-right">
+        <a class="back-home-btn" href="../" title="Back to dashboard hub">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+          <span>Hub</span>
+        </a>
+        <div class="header-stat-pill" id="headerStatPill">— drills selected</div>
+        <img src="../homepage/logo.png" alt="Panetolikos FC" class="header-logo-right" onerror="this.style.display='none'">
+      </div>
+    </div>
+
+    <div class="filters">
+      <div class="filter-card">
+        <div class="label">
+          <span>Drill Date</span>
+          <span class="hint">Single day</span>
+        </div>
+        <select id="dateSelect" class="date-select"></select>
+      </div>
+      <div class="filter-card">
+        <div class="label">
+          <span>Drill Title</span>
+          <span class="hint">Multi-select · type to search</span>
+        </div>
+        <div class="multi-wrap">
+          <button class="multi-trigger" id="drillTrigger" type="button">
+            <span class="trigger-text" id="drillTriggerLabel">All drills</span>
+            <span class="count-pill" id="drillCount">0</span>
+          </button>
+          <div class="multi-panel" id="drillPanel">
+            <div class="multi-actions">
+              <button class="mini-btn" id="drillSelectAll" type="button">Select all</button>
+              <button class="mini-btn" id="drillSelectEntire" type="button">Entire Session only</button>
+              <button class="mini-btn" id="drillClear" type="button">Clear</button>
+              <span class="info" id="drillAvailableInfo">0 available</span>
+            </div>
+            <input type="text" class="multi-search" id="drillSearch" placeholder="Type to filter drills…">
+            <div id="drillOptions"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header">
+        <div>
+          <div class="table-title">Performance Table</div>
+          <div class="table-subtitle">% Max Match = current value vs player's peak in any single half (1st / 2nd Half ± ET) of a Match Day</div>
+        </div>
+        <div class="table-meta" id="tableMeta">—</div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-inner" id="tableWrapper">
+          <div class="empty-state">Loading data…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+'use strict';
+
+/* ============================================================
+   Daily Report Running Load — Panetolikos FC
+   ============================================================ */
+
+const DEFAULT_CSV_PATH = 'Daily_Report.csv';
+
+/* Column mapping — matches the CSV header exactly */
+const COL = {
+  player:    'Player Last Name',
+  position:  'Player Primary Position',
+  drillDate: 'Drill Date',
+  sessionDate: 'Session Date',
+  sessionType: 'Session Type',
+  drillTitle: 'Drill Title',
+  totalTime: 'Total Time',
+  td:        'Total Distance',
+  td_pm:     'Distance Per Min',
+  hsr:       'High Speed Running (Absolute)',
+  hsr_pm:    'HSR Per Minute (Absolute)',
+  acc:       'Accelerations (Absolute)',
+  dec:       'Decelerations (Absolute)',
+  mv:        'Max Speed'
+};
+
+/* Metric definitions — order = column order in the table.
+   mode: 'volume' (sum), 'rate' (time-weighted avg), 'ratio' (HSR/TD %), 'max' (max).
+   pctMode: 'match' = show %Max Match column (vs player's peak in any single half of a Match Day);
+            'none' = no % column. */
+const METRICS = [
+  { key: 'time',  display: 'Time',     unit: 'min',mode: 'volume',  decimals: 0, csvKey: COL.totalTime, pctMode: 'none'  },
+  { key: 'td',    display: 'TD',       unit: 'm',  mode: 'volume',  decimals: 0, csvKey: COL.td,        pctMode: 'match' },
+  { key: 'hsr',   display: 'HSR',      unit: 'm',  mode: 'volume',  decimals: 0, csvKey: COL.hsr,       pctMode: 'match' },
+  { key: 'hsrtd', display: '%HSR/TD',  unit: '%',  mode: 'ratio',   decimals: 2, csvKey: null,          pctMode: 'none'  },
+  { key: 'tdpm',  display: 'mtr/min',  unit: '',   mode: 'rate',    decimals: 2, csvKey: COL.td_pm,     pctMode: 'none'  },
+  { key: 'hsrpm', display: 'HSR/min',  unit: '',   mode: 'rate',    decimals: 2, csvKey: COL.hsr_pm,    pctMode: 'none'  },
+  { key: 'acc',   display: 'Acc',      unit: '',   mode: 'volume',  decimals: 0, csvKey: COL.acc,       pctMode: 'match' },
+  { key: 'dec',   display: 'Dec',      unit: '',   mode: 'volume',  decimals: 0, csvKey: COL.dec,       pctMode: 'match' },
+  { key: 'mv',    display: 'mV',       unit: 'km/h',mode: 'max',    decimals: 1, csvKey: COL.mv,        pctMode: 'none'  }
+];
+
+const state = {
+  rows: [],                  // all CSV rows (parsed and cleaned)
+  rowsByPlayerDate: null,    // Map<player, Map<date, row[]>>
+  allDates: [],              // sorted desc
+  allDrills: new Set(),
+  selectedDate: null,
+  selectedDrills: new Set(),
+  sortKey: 'td',
+  sortDir: 'desc'
+};
+
+/* ---------- Helpers ---------- */
+function num(v) {
+  if (v === null || v === undefined || v === '' || v === '-') return null;
+  // Handle European decimal commas, percentage signs, etc.
+  const cleaned = String(v).replace(/,/g, '.').replace(/[^\d.\-eE+]/g, '');
+  if (cleaned === '' || cleaned === '-') return null;
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : null;
+}
+
+function fmtNum(v, dec) {
+  if (v === null || v === undefined || !Number.isFinite(v)) return '—';
+  if (dec === 0) return Math.round(v).toLocaleString('en-US');
+  return v.toLocaleString('en-US', {
+    minimumFractionDigits: dec,
+    maximumFractionDigits: dec
+  });
+}
+
+function fmtPct(v) {
+  if (v === null || v === undefined || !Number.isFinite(v)) return '—';
+  return Math.round(v) + '%';
+}
+
+function escapeHTML(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+/* Abbreviate verbose position names to keep the Pos column compact.
+   Falls back to the original text for anything unrecognized. */
+const POSITION_ABBREV = {
+  'goalkeeper':           'GK',
+  'central defender':     'CB',
+  'centre back':          'CB',
+  'center back':          'CB',
+  'full back':            'FB',
+  'left back':            'LB',
+  'right back':           'RB',
+  'wing back':            'WB',
+  'defensive midfielder': 'DM',
+  'central midfielder':   'CM',
+  'centre midfielder':    'CM',
+  'center midfielder':    'CM',
+  'offensive midfielder': 'AM',
+  'attacking midfielder': 'AM',
+  'midfielder':           'MF',
+  'winger':               'W',
+  'left winger':          'LW',
+  'right winger':         'RW',
+  'second striker':       'SS',
+  'striker':              'ST',
+  'forward':              'FW',
+  'centre forward':       'CF',
+  'center forward':       'CF'
+};
+function abbrevPosition(s) {
+  if (!s) return '—';
+  // Normalize: lowercase, collapse whitespace, trim
+  const key = String(s).toLowerCase().replace(/\s+/g, ' ').trim();
+  if (POSITION_ABBREV[key]) return POSITION_ABBREV[key];
+  // Fallback: try abbreviating word-by-word — first letter of each word
+  // Keeps things compact even if a position name isn't in the lookup
+  const words = key.split(' ').filter(w => w.length > 0);
+  if (words.length >= 2) {
+    return words.map(w => w[0].toUpperCase()).join('');
+  }
+  // Single unknown word — return as-is (capitalized)
+  return s.length > 6 ? s.slice(0, 6) : s;
+}
+
+/* Parse "M/D/YYYY" -> JS Date.  Falls back to Date.parse on failure. */
+function parseDate(s) {
+  if (!s) return null;
+  const trimmed = String(s).trim();
+  const m = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (m) {
+    let y = parseInt(m[3], 10);
+    if (y < 100) y += 2000;
+    return new Date(y, parseInt(m[1], 10) - 1, parseInt(m[2], 10));
+  }
+  const d = new Date(trimmed);
+  return isNaN(d) ? null : d;
+}
+
+function formatDateLong(s) {
+  const d = parseDate(s);
+  if (!d) return s;
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function normWS(s) { return String(s == null ? '' : s).trim().replace(/\s+/g, ' '); }
+
+/* ---------- CSV loading ---------- */
+function loadCSV() {
+  const wrap = document.getElementById('tableWrapper');
+  wrap.innerHTML = '<div class="empty-state">Loading CSV…</div>';
+
+  Papa.parse(DEFAULT_CSV_PATH, {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    transformHeader: h => h.trim(),
+    complete: (res) => {
+      try { ingest(res.data); }
+      catch (e) {
+        console.error(e);
+        wrap.innerHTML = '<div class="error-msg">⚠ Failed to parse CSV: ' + escapeHTML(e.message) + '</div>';
+      }
+    },
+    error: (err) => {
+      wrap.innerHTML = '<div class="error-msg">⚠ Could not load ' + DEFAULT_CSV_PATH + ': ' + escapeHTML(err.message) + '</div>';
+    }
+  });
+}
+
+function ingest(rawRows) {
+  if (!rawRows || rawRows.length === 0) {
+    document.getElementById('tableWrapper').innerHTML = '<div class="error-msg">⚠ CSV contains no rows.</div>';
+    return;
+  }
+
+  // Clean and normalize. Skip rows without player, drill or date.
+  const rows = [];
+  const dates = new Set();
+  const drills = new Set();
+  for (const r of rawRows) {
+    const player = normWS(r[COL.player]);
+    const drill  = normWS(r[COL.drillTitle]);
+    const date   = normWS(r[COL.drillDate] || r[COL.sessionDate]);
+    if (!player || !drill || !date) continue;
+    rows.push({
+      player,
+      position: normWS(r[COL.position]),
+      sessionType: normWS(r[COL.sessionType]),
+      drill,
+      date,
+      dateObj: parseDate(date),
+      // Cache numeric values up-front for speed
+      time:  num(r[COL.totalTime]),
+      td:    num(r[COL.td]),
+      tdpm:  num(r[COL.td_pm]),
+      hsr:   num(r[COL.hsr]),
+      hsrpm: num(r[COL.hsr_pm]),
+      acc:   num(r[COL.acc]),
+      dec:   num(r[COL.dec]),
+      mv:    num(r[COL.mv])
+    });
+    dates.add(date);
+    drills.add(drill);
+  }
+
+  state.rows = rows;
+  state.allDrills = drills;
+
+  // Sort dates descending (newest first)
+  state.allDates = [...dates].sort((a, b) => {
+    const da = parseDate(a), db = parseDate(b);
+    if (!da && !db) return 0;
+    if (!da) return 1;
+    if (!db) return -1;
+    return db - da;
+  });
+
+  // Build a Map<player, Map<date, row[]>> for fast historical-max lookups
+  const byPlayer = new Map();
+  for (const r of rows) {
+    if (!byPlayer.has(r.player)) byPlayer.set(r.player, new Map());
+    const byDate = byPlayer.get(r.player);
+    if (!byDate.has(r.date)) byDate.set(r.date, []);
+    byDate.get(r.date).push(r);
+  }
+  state.rowsByPlayerDate = byPlayer;
+
+  // Precompute Max Match per (player, metric).
+  // Definition: highest value seen in any HALF row (1st Half / 1st Half ET / 2nd Half / 2nd Half ET)
+  // on a Match Day (Session Type starts with "Match Day" exactly — so excludes "Match Day -1", "+1" etc).
+  // We do this once at ingest so every subsequent render is instant.
+  state.maxMatchByPlayer = computeMaxMatchByPlayer(rows);
+
+  // Default selections
+  state.selectedDate = state.allDates[0];
+  initDefaultDrills();
+
+  populateDateSelect();
+  populateDrillOptions();
+  render();
+}
+
+/**
+ * Returns Map<player, { td, hsr, acc, dec }> with the player's all-time
+ * peak HALF-period value (across all match days) for each volume metric.
+ */
+function computeMaxMatchByPlayer(rows) {
+  const out = new Map();
+  for (const r of rows) {
+    if (!isMatchDayRow(r)) continue;
+    if (!isHalfDrill(r.drill)) continue;
+    if (!out.has(r.player)) out.set(r.player, { td: null, hsr: null, acc: null, dec: null });
+    const m = out.get(r.player);
+    for (const k of ['td','hsr','acc','dec']) {
+      const v = r[k];
+      if (v !== null && Number.isFinite(v)) {
+        if (m[k] === null || v > m[k]) m[k] = v;
+      }
+    }
+  }
+  return out;
+}
+
+/* True for rows whose Session Type is exactly "Match Day" (a real game).
+   Excludes "Match Day -1", "+1", training days, etc. */
+function isMatchDayRow(r) {
+  const t = (r.sessionType || '').trim().toLowerCase();
+  return t === 'match day';
+}
+
+/* True for drill names that represent a single HALF of a match.
+   Tolerant of whitespace, casing and the "1 st" / "1st" variants. */
+function isHalfDrill(drillName) {
+  if (!drillName) return false;
+  // Normalize: lowercase, collapse spaces, remove spaces between digit and "st"/"nd"
+  const n = String(drillName).toLowerCase().replace(/\s+/g, ' ').trim()
+    .replace(/^(\d)\s+(st|nd)\b/, '$1$2');  // "1 st half" → "1st half"
+  return n === '1st half'
+      || n === '1st half et'
+      || n === '2nd half'
+      || n === '2nd half et'
+      || n === '2e helft';   // Dutch variant seen in CSV
+}
+
+/* ---------- Filter UI ---------- */
+function populateDateSelect() {
+  const sel = document.getElementById('dateSelect');
+  sel.innerHTML = '';
+  for (const d of state.allDates) {
+    const opt = document.createElement('option');
+    opt.value = d;
+    opt.textContent = formatDateLong(d);
+    sel.appendChild(opt);
+  }
+  sel.value = state.selectedDate;
+}
+
+function getDrillsForCurrentDate() {
+  // Drills available on the currently selected date (drives the multi-select content)
+  const set = new Set();
+  for (const r of state.rows) {
+    if (r.date === state.selectedDate) set.add(r.drill);
+  }
+  return set;
+}
+
+function initDefaultDrills() {
+  // Default: "Entire Session" if it exists, otherwise all available drills for the date.
+  const available = getDrillsForCurrentDate();
+  state.selectedDrills = new Set();
+  const entire = [...available].find(d => d.toLowerCase() === 'entire session');
+  if (entire) {
+    state.selectedDrills.add(entire);
+  } else {
+    available.forEach(d => state.selectedDrills.add(d));
+  }
+}
+
+function preserveDrillsAcrossDateChange() {
+  const available = getDrillsForCurrentDate();
+  const preserved = new Set();
+  state.selectedDrills.forEach(d => { if (available.has(d)) preserved.add(d); });
+  state.selectedDrills = preserved;
+  if (state.selectedDrills.size === 0) initDefaultDrills();
+}
+
+function populateDrillOptions() {
+  const available = [...getDrillsForCurrentDate()].sort((a, b) => {
+    if (a.toLowerCase() === 'entire session') return -1;
+    if (b.toLowerCase() === 'entire session') return 1;
+    return a.localeCompare(b);
+  });
+  document.getElementById('drillAvailableInfo').textContent = available.length + ' available';
+  const container = document.getElementById('drillOptions');
+  container.innerHTML = '';
+
+  for (const d of available) {
+    const lbl = document.createElement('label');
+    lbl.className = 'multi-option';
+    lbl.dataset.drill = d.toLowerCase();
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = d;
+    cb.checked = state.selectedDrills.has(d);
+    cb.addEventListener('change', () => {
+      if (cb.checked) state.selectedDrills.add(d);
+      else state.selectedDrills.delete(d);
+      updateDrillTriggerLabel();
+      render();
+    });
+    const txt = document.createElement('span');
+    txt.className = 'opt-label';
+    txt.textContent = d;
+    lbl.appendChild(cb);
+    lbl.appendChild(txt);
+    container.appendChild(lbl);
+  }
+  updateDrillTriggerLabel();
+}
+
+function updateDrillTriggerLabel() {
+  const available = getDrillsForCurrentDate();
+  const count = state.selectedDrills.size;
+  const total = available.size;
+  const label = document.getElementById('drillTriggerLabel');
+  const pill = document.getElementById('drillCount');
+
+  if (count === 0)              label.textContent = 'No drills selected';
+  else if (count === 1)         label.textContent = [...state.selectedDrills][0];
+  else if (count === total)     label.textContent = 'All drills';
+  else                          label.textContent = count + ' drills selected';
+  pill.textContent = count;
+}
+
+/* ---------- Aggregation ---------- */
+/**
+ * Aggregate a player's value for a given metric across a set of drill rows.
+ * Returns null if no data.
+ */
+function aggregate(rows, metric) {
+  if (!rows || !rows.length) return null;
+
+  if (metric.mode === 'volume') {
+    let sum = 0, any = false;
+    for (const r of rows) {
+      const v = r[metric.key];
+      if (v !== null && v !== undefined && Number.isFinite(v)) { sum += v; any = true; }
+    }
+    return any ? sum : null;
+  }
+
+  if (metric.mode === 'max') {
+    let mx = -Infinity;
+    for (const r of rows) {
+      const v = r[metric.key];
+      if (v !== null && v !== undefined && Number.isFinite(v) && v > mx) mx = v;
+    }
+    return mx === -Infinity ? null : mx;
+  }
+
+  if (metric.mode === 'rate') {
+    // Time-weighted average using totalTime (Total Time per drill row)
+    let weighted = 0, totalT = 0, any = false;
+    for (const r of rows) {
+      const v = r[metric.key];
+      const t = r.time;
+      if (v !== null && Number.isFinite(v) && t !== null && Number.isFinite(t) && t > 0) {
+        weighted += v * t; totalT += t; any = true;
+      }
+    }
+    return (any && totalT > 0) ? weighted / totalT : null;
+  }
+
+  if (metric.mode === 'ratio') {
+    // HSR/TD = sum(HSR) / sum(TD) × 100
+    let hsrSum = 0, tdSum = 0, any = false;
+    for (const r of rows) {
+      const h = r.hsr, d = r.td;
+      if (h !== null && Number.isFinite(h) && d !== null && Number.isFinite(d)) {
+        hsrSum += h; tdSum += d; any = true;
+      }
+    }
+    return (any && tdSum > 0) ? (hsrSum / tdSum) * 100 : null;
+  }
+
+  return null;
+}
+
+/**
+ * Build the table data:
+ *   - One row per player who has data on the selected date in any selected drill
+ *   - For each metric: current aggregate + %Max Match (vs precomputed half-period peak)
+ */
+function buildTableData() {
+  const date = state.selectedDate;
+  const selDrills = state.selectedDrills;
+
+  if (!date || selDrills.size === 0) return [];
+
+  // Step 1: gather players who have data on the selected date in any selected drill
+  const players = new Map(); // player -> { position, drillRowsForCurrent: row[], allDrillsTodayRows: Map<drill, row[]> }
+
+  for (const r of state.rows) {
+    if (r.date !== date) continue;
+    if (!players.has(r.player)) {
+      players.set(r.player, {
+        player: r.player,
+        position: r.position,
+        currentRows: [],         // rows on this date matching selected drills
+        rowsByDrillToday: new Map() // all drills that day, grouped — for matchday max
+      });
+    }
+    const p = players.get(r.player);
+    if (selDrills.has(r.drill)) p.currentRows.push(r);
+    if (!p.rowsByDrillToday.has(r.drill)) p.rowsByDrillToday.set(r.drill, []);
+    p.rowsByDrillToday.get(r.drill).push(r);
+  }
+
+  // Filter: only keep players who actually have selected-drill rows on this date
+  const out = [];
+  for (const p of players.values()) {
+    if (p.currentRows.length === 0) continue;
+
+    const row = {
+      player: p.player,
+      position: p.position,
+      values: {}      // metricKey -> { value, pctGame, pctMatchday }
+    };
+
+    for (const metric of METRICS) {
+      const current = aggregate(p.currentRows, metric);
+
+      let pctGame = null;
+      let pctMatchday = null;
+
+      if (metric.pctMode === 'match' && current !== null && Number.isFinite(current)) {
+        // %Max Match — peak HALF value ever recorded for this player on a Match Day.
+        // Computed once at ingest, just look it up here.
+        const peaks = state.maxMatchByPlayer.get(p.player);
+        const peak = peaks ? peaks[metric.key] : null;
+        if (peak !== null && peak !== undefined && peak > 0) {
+          pctGame = (current / peak) * 100;
+        }
+      }
+
+      row.values[metric.key] = { value: current, pctGame, pctMatchday };
+    }
+    out.push(row);
+  }
+
+  return out;
+}
+
+/* ---------- Heatmap colouring ---------- */
+/**
+ * Map a value to a background color based on its rank within a column.
+ * Higher values = greener; lower values = redder. Mid = warm cream.
+ * Returns a CSS color string (rgba) or '' for null.
+ */
+function heatmapColor(value, min, max, opts) {
+  if (value === null || !Number.isFinite(value) || min === null || max === null || max === min) return '';
+  const t = Math.max(0, Math.min(1, (value - min) / (max - min))); // 0 (low) → 1 (high)
+  const opacity = (opts && opts.opacity) || 0.55;
+
+  // Three-stop gradient: red (0) → cream (0.5) → green (1)
+  // Red:    214, 69, 69
+  // Cream:  251, 242, 199
+  // Green:  45, 155, 63
+  let r, g, b;
+  if (t < 0.5) {
+    const u = t / 0.5;
+    r = Math.round(214 + (251 - 214) * u);
+    g = Math.round(69  + (242 - 69)  * u);
+    b = Math.round(69  + (199 - 69)  * u);
+  } else {
+    const u = (t - 0.5) / 0.5;
+    r = Math.round(251 + (45  - 251) * u);
+    g = Math.round(242 + (155 - 242) * u);
+    b = Math.round(199 + (63  - 199) * u);
+  }
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}
+
+/**
+ * For percentage cells, use a fixed scale (0-100) with mid at ~70%.
+ * High % = green, low % = red.
+ */
+function pctColor(pct) {
+  if (pct === null || !Number.isFinite(pct)) return '';
+  // Scale: cap at 100 for color, but allow >100 to show as deep green.
+  const t = Math.max(0, Math.min(1.2, pct / 100)) / 1.2;
+  let r, g, b;
+  if (t < 0.5) {
+    const u = t / 0.5;
+    r = Math.round(214 + (251 - 214) * u);
+    g = Math.round(69  + (242 - 69)  * u);
+    b = Math.round(69  + (199 - 69)  * u);
+  } else {
+    const u = (t - 0.5) / 0.5;
+    r = Math.round(251 + (45  - 251) * u);
+    g = Math.round(242 + (155 - 242) * u);
+    b = Math.round(199 + (63  - 199) * u);
+  }
+  return `rgba(${r}, ${g}, ${b}, 0.6)`;
+}
+
+/* ---------- Sorting ---------- */
+function sortRows(rows, sortKey, sortDir) {
+  // Safety: if old localStorage / state had a _m sort key from before, fall back
+  if (sortKey && sortKey.endsWith('_m')) sortKey = 'td';
+  const dir = sortDir === 'asc' ? 1 : -1;
+  rows.sort((a, b) => {
+    if (sortKey === 'player') return dir * a.player.localeCompare(b.player);
+    if (sortKey === 'position') {
+      const cmp = (a.position || '').localeCompare(b.position || '');
+      return cmp !== 0 ? dir * cmp : a.player.localeCompare(b.player);
+    }
+    // Otherwise: metric-related key
+    // Could be: <metricKey>, <metricKey>_g (pct game), <metricKey>_m (pct matchday)
+    let av, bv;
+    if (sortKey.endsWith('_g')) {
+      const mk = sortKey.slice(0, -2);
+      av = a.values[mk]?.pctGame; bv = b.values[mk]?.pctGame;
+    } else if (sortKey.endsWith('_m')) {
+      const mk = sortKey.slice(0, -2);
+      av = a.values[mk]?.pctMatchday; bv = b.values[mk]?.pctMatchday;
+    } else {
+      av = a.values[sortKey]?.value; bv = b.values[sortKey]?.value;
+    }
+    const an = (av === null || av === undefined || !Number.isFinite(av)) ? -Infinity : av;
+    const bn = (bv === null || bv === undefined || !Number.isFinite(bv)) ? -Infinity : bv;
+    return dir * (an - bn);
+  });
+}
+
+/* ---------- Render ---------- */
+function render() {
+  // Update header meta
+  document.getElementById('metaDate').textContent = formatDateLong(state.selectedDate);
+  const drillCount = state.selectedDrills.size;
+  const totalDrills = getDrillsForCurrentDate().size;
+  let drillSummary = '—';
+  if (drillCount === 0) drillSummary = 'None';
+  else if (drillCount === 1) drillSummary = [...state.selectedDrills][0];
+  else if (drillCount === totalDrills) drillSummary = 'All (' + drillCount + ')';
+  else drillSummary = drillCount + ' selected';
+  document.getElementById('metaDrills').textContent = drillSummary;
+
+  // Header stat pill: matches Game dashboard's "X drills selected" widget
+  const pill = document.getElementById('headerStatPill');
+  if (drillCount === 0)         pill.textContent = 'No drills selected';
+  else if (drillCount === 1)    pill.textContent = '1 drill selected';
+  else                          pill.textContent = drillCount + ' drills selected';
+
+  const rows = buildTableData();
+  document.getElementById('metaPlayers').textContent = rows.length;
+  document.getElementById('tableMeta').innerHTML =
+    '<strong>' + rows.length + '</strong> ' + (rows.length === 1 ? 'player' : 'players') +
+    ' · sorted by <strong>' + getSortLabel() + '</strong> ' + (state.sortDir === 'asc' ? '↑' : '↓');
+
+  if (rows.length === 0) {
+    document.getElementById('tableWrapper').innerHTML =
+      '<div class="empty-state">No data for this date and drill selection.</div>';
+    return;
+  }
+
+  sortRows(rows, state.sortKey, state.sortDir);
+
+  // Compute column min/max for heatmap of value columns
+  const colStats = {};
+  for (const m of METRICS) {
+    let mn = Infinity, mx = -Infinity;
+    for (const r of rows) {
+      const v = r.values[m.key]?.value;
+      if (v !== null && Number.isFinite(v)) {
+        if (v < mn) mn = v;
+        if (v > mx) mx = v;
+      }
+    }
+    colStats[m.key] = { min: mn === Infinity ? null : mn, max: mx === -Infinity ? null : mx };
+  }
+
+  // Build header
+  let thead = '<tr>';
+  thead += headerCell('player', 'Player', false);
+  thead += headerCell('position', 'Pos', false);
+
+  for (const m of METRICS) {
+    // Compact unit display: omit for long names, abbreviate "km/h"
+    let unitStr = '';
+    if (m.unit && m.unit !== '' && m.unit !== '%') {
+      unitStr = ' (' + m.unit + ')';
+    }
+    thead += headerCell(m.key, m.display + unitStr, true);
+    if (m.pctMode === 'match') {
+      // Short label "%TD" rather than "%TD Match" — column header explains itself in context
+      thead += headerCell(m.key + '_g', '%' + m.display, false);
+    }
+  }
+  thead += '</tr>';
+
+  // Build body
+  let tbody = '';
+  for (const r of rows) {
+    let tr = '<tr>';
+    tr += `<td>${escapeHTML(r.player)}</td>`;
+    tr += `<td class="col-pos" title="${escapeHTML(r.position || '')}">${escapeHTML(abbrevPosition(r.position))}</td>`;
+    for (const m of METRICS) {
+      const cell = r.values[m.key] || {};
+      const val = cell.value;
+      const stats = colStats[m.key];
+      const bgVal = (val !== null && Number.isFinite(val))
+        ? heatmapColor(val, stats.min, stats.max, { opacity: 0.45 })
+        : '';
+      const valTxt = (val === null || !Number.isFinite(val)) ? '—' : fmtNum(val, m.decimals);
+      const valCls = (val === null || !Number.isFinite(val)) ? 'empty' : '';
+      tr += `<td class="col-group ${valCls}" style="${bgVal ? 'background:' + bgVal : ''}">${valTxt}</td>`;
+      if (m.pctMode === 'match') {
+        const pg = cell.pctGame;
+        const pgBg = pg !== null ? pctColor(pg) : '';
+        const pgCls = (pg === null || !Number.isFinite(pg)) ? 'empty' : '';
+        tr += `<td class="${pgCls}" style="${pgBg ? 'background:' + pgBg : ''}">${fmtPct(pg)}</td>`;
+      }
+    }
+    tr += '</tr>';
+    tbody += tr;
+  }
+
+  const tableHTML = `<table class="dr-table"><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
+  document.getElementById('tableWrapper').innerHTML = tableHTML;
+
+  // Wire sort handlers
+  document.querySelectorAll('.dr-table thead th[data-sort]').forEach(th => {
+    th.addEventListener('click', () => {
+      const k = th.dataset.sort;
+      if (state.sortKey === k) state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
+      else {
+        state.sortKey = k;
+        state.sortDir = (k === 'player' || k === 'position') ? 'asc' : 'desc';
+      }
+      render();
+    });
+  });
+}
+
+function headerCell(sortKey, label, isGroupStart) {
+  const isSorted = state.sortKey === sortKey;
+  const arrow = isSorted ? (state.sortDir === 'asc' ? '▲' : '▼') : '↕';
+  const cls = (isSorted ? 'sorted' : '') + (isGroupStart ? ' col-group' : '');
+  return `<th class="${cls.trim()}" data-sort="${sortKey}">${escapeHTML(label)} <span class="sort-icon">${arrow}</span></th>`;
+}
+
+function getSortLabel() {
+  if (state.sortKey === 'player') return 'Player';
+  if (state.sortKey === 'position') return 'Position';
+  if (state.sortKey.endsWith('_g')) {
+    const m = METRICS.find(x => x.key === state.sortKey.slice(0, -2));
+    return m ? '%' + m.display + ' Game' : state.sortKey;
+  }
+  if (state.sortKey.endsWith('_m')) {
+    const m = METRICS.find(x => x.key === state.sortKey.slice(0, -2));
+    return m ? '%' + m.display + ' Matchday' : state.sortKey;
+  }
+  const m = METRICS.find(x => x.key === state.sortKey);
+  return m ? m.display : state.sortKey;
+}
+
+/* ---------- Wire up filter UI events ---------- */
+document.getElementById('dateSelect').addEventListener('change', (e) => {
+  state.selectedDate = e.target.value;
+  preserveDrillsAcrossDateChange();
+  populateDrillOptions();
+  render();
+});
+
+const drillTrigger = document.getElementById('drillTrigger');
+const drillPanel = document.getElementById('drillPanel');
+drillTrigger.addEventListener('click', (e) => {
+  e.stopPropagation();
+  drillPanel.classList.toggle('open');
+  drillTrigger.classList.toggle('open');
+});
+document.addEventListener('click', (e) => {
+  if (!drillPanel.contains(e.target) && e.target !== drillTrigger) {
+    drillPanel.classList.remove('open');
+    drillTrigger.classList.remove('open');
+  }
+});
+
+document.getElementById('drillSelectAll').addEventListener('click', () => {
+  state.selectedDrills = new Set(getDrillsForCurrentDate());
+  populateDrillOptions();
+  render();
+});
+document.getElementById('drillSelectEntire').addEventListener('click', () => {
+  const available = getDrillsForCurrentDate();
+  const entire = [...available].find(d => d.toLowerCase() === 'entire session');
+  state.selectedDrills = new Set();
+  if (entire) state.selectedDrills.add(entire);
+  populateDrillOptions();
+  render();
+});
+document.getElementById('drillClear').addEventListener('click', () => {
+  state.selectedDrills = new Set();
+  populateDrillOptions();
+  render();
+});
+
+document.getElementById('drillSearch').addEventListener('input', (e) => {
+  const q = e.target.value.trim().toLowerCase();
+  document.querySelectorAll('#drillOptions .multi-option').forEach(opt => {
+    const drill = opt.dataset.drill || '';
+    opt.classList.toggle('hidden', q !== '' && !drill.includes(q));
+  });
+});
+
+/* Initial load */
+loadCSV();
+</script>
+</body>
+</html>
