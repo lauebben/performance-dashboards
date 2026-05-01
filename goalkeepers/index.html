@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GK LAB · Panetolikos FC</title>
+<link rel="icon" href="../logo.png" type="image/png" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<style>
+  /* ======================================================
+     PANETOLIKOS FC — GOALKEEPERS DASHBOARD
+     Style: JUMPLAB — yellow page, navy header,
+     left athlete sidebar, cream cards.
+     ====================================================== */
+  :root {
+    --bg:        #f4d03a;   /* Panetolikos yellow */
+    --bg-soft:   #f7d94c;
+    --navy:      #0f1d3d;
+    --navy-700:  #1a2a52;
+    --navy-800:  #0a1530;
+    --cream:     #faf3e3;
+    --cream-2:   #f4ebd2;
+    --ink:       #0f1d3d;
+    --muted:     #5a6478;
+    --line:      #d9cfb6;
+    --good:      #2e7d4f;
+    --warn:      #c98b1a;
+    --bad:       #b03a2e;
+    --accent:    #c0392b;
+    --accent-2:  #1f618d;
+    --shadow:    0 6px 18px rgba(15, 29, 61, .14);
+    --shadow-sm: 0 2px 6px rgba(15, 29, 61, .10);
+    --radius:    14px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ============== TOP BAR ============== */
+  header.topbar {
+    background: var(--navy);
+    color: #fff;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: var(--shadow);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    height: 64px;
+  }
+  .hub-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,.08);
+    color: #fff;
+    text-decoration: none;
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-size: 12px; font-weight: 600;
+    transition: background .15s ease;
+  }
+  .hub-btn:hover { background: rgba(255,255,255,.16); }
+
+  .brand-logo {
+    width: 38px; height: 38px;
+    background: var(--bg);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .brand-logo img { width: 100%; height: 100%; object-fit: contain; }
+  .brand-logo .fallback {
+    color: var(--navy); font-weight: 900; font-size: 14px; letter-spacing: -.5px;
+  }
+
+  .brand-title {
+    display: flex; align-items: center; gap: 14px;
+  }
+  .brand-title .name {
+    color: var(--bg);
+    font-weight: 900;
+    letter-spacing: 1px;
+    font-size: 20px;
+  }
+  .brand-title .name .lab { color: #fff; }
+  .brand-title .sub {
+    color: rgba(255,255,255,.7);
+    font-size: 12px;
+    font-weight: 500;
+    border-left: 1px solid rgba(255,255,255,.2);
+    padding-left: 14px;
+  }
+
+  .topbar-spacer { flex: 1; }
+
+  .player-select-wrap {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .player-select-wrap .label {
+    color: rgba(255,255,255,.65);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    font-weight: 700;
+  }
+  select.player-select {
+    background: var(--navy-700);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 8px;
+    padding: 7px 28px 7px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='white' d='M0 0l5 6 5-6z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    min-width: 220px;
+  }
+  select.player-select:focus { outline: none; border-color: var(--bg); }
+
+  .top-actions { display: flex; gap: 8px; }
+  .top-btn {
+    background: var(--navy-700);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    display: inline-flex; align-items: center; gap: 6px;
+    transition: all .15s ease;
+  }
+  .top-btn:hover { background: var(--navy-800); border-color: var(--bg); }
+  .top-btn.primary { background: var(--bg); color: var(--navy); border-color: var(--bg); }
+  .top-btn.primary:hover { background: #ffe066; }
+  .top-btn .ic {
+    display: inline-block; width: 13px; height: 13px;
+    background: currentColor;
+    -webkit-mask-size: contain; mask-size: contain;
+    -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+    -webkit-mask-position: center; mask-position: center;
+  }
+  .ic.ic-up    { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='black' d='M12 4l-7 7h4v7h6v-7h4z'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='black' d='M12 4l-7 7h4v7h6v-7h4z'/></svg>"); }
+  .ic.ic-down  { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='black' d='M12 20l7-7h-4V6H9v7H5z'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='black' d='M12 20l7-7h-4V6H9v7H5z'/></svg>"); }
+  .ic.ic-trash { -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='black' d='M6 7h12l-1 13H7zM9 4h6v2H9z'/></svg>"); mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='black' d='M6 7h12l-1 13H7zM9 4h6v2H9z'/></svg>"); }
+
+  .crest {
+    width: 40px; height: 40px;
+    background: var(--bg);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .crest img { width: 100%; height: 100%; object-fit: contain; }
+
+  /* ============== APP LAYOUT ============== */
+  .app {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    min-height: calc(100vh - 64px);
+  }
+
+  /* ============== SIDEBAR ============== */
+  aside.sidebar {
+    background: var(--bg);
+    padding: 18px 12px 30px;
+    border-right: 2px solid rgba(15,29,61,.08);
+  }
+  .sidebar h4 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: rgba(15,29,61,.55);
+    margin: 4px 8px 12px;
+    font-weight: 800;
+  }
+  .athlete {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-bottom: 4px;
+    transition: background .12s;
+  }
+  .athlete:hover { background: rgba(15,29,61,.07); }
+  .athlete.active {
+    background: var(--navy);
+    color: #fff;
+    box-shadow: var(--shadow-sm);
+  }
+  .athlete.active .initials {
+    background: var(--bg);
+    color: var(--navy);
+  }
+  .athlete .initials {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    background: rgba(15,29,61,.12);
+    color: var(--navy);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 800;
+    letter-spacing: .5px;
+    flex-shrink: 0;
+  }
+  .athlete .name {
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ============== MAIN CONTENT ============== */
+  main.content {
+    padding: 18px 22px 60px;
+    overflow-x: hidden;
+  }
+
+  /* ----- DAILY DROP BAR (compact, above banner) ----- */
+  .drop-bar {
+    background: var(--cream);
+    border: 1.5px dashed var(--navy);
+    border-radius: var(--radius);
+    padding: 10px 16px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+  }
+  .drop-bar:hover { background: var(--cream-2); }
+  .drop-bar.dragover {
+    background: #fff7d6; border-color: var(--accent); border-style: solid;
+  }
+  .drop-bar .icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .drop-bar .text { flex: 1; line-height: 1.3; }
+  .drop-bar .text .big { font-size: 13px; font-weight: 700; color: var(--ink); }
+  .drop-bar .text .small { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .drop-bar input[type=file] { display: none; }
+  .drop-bar .status {
+    font-size: 11px;
+    color: var(--good);
+    font-weight: 700;
+    padding: 4px 10px;
+    background: rgba(46,125,79,0.10);
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .drop-bar .status.empty { color: var(--muted); background: rgba(15,29,61,0.06); }
+  .drop-bar .status.warn  { color: var(--warn); background: rgba(201,139,26,0.12); }
+
+  /* ----- PLAYER BANNER ----- */
+  .player-banner {
+    background: var(--navy);
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 18px 22px;
+    display: flex; align-items: center; gap: 18px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+  .player-banner .avatar {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--bg);
+    color: var(--navy);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 18px;
+    flex-shrink: 0;
+  }
+  .player-banner .info { flex: 1; }
+  .player-banner h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--bg);
+    letter-spacing: .3px;
+  }
+  .player-banner .meta {
+    margin-top: 4px;
+    font-size: 12px;
+    color: rgba(255,255,255,.75);
+    display: flex; gap: 18px; flex-wrap: wrap;
+  }
+  .player-banner .meta b { color: #fff; font-weight: 700; }
+  .session-badge {
+    background: transparent;
+    border: 1px solid var(--bg);
+    color: var(--bg);
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  /* ----- KPI ROW ----- */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .kpi {
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 12px 14px 14px;
+    box-shadow: var(--shadow);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi .label {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--muted);
+    letter-spacing: 1.3px;
+    font-weight: 800;
+    margin-bottom: 4px;
+  }
+  .kpi .gauge { position: relative; height: 68px; margin: 2px 0 0; }
+  .kpi .gauge svg { width: 100%; height: 100%; display: block; }
+  .kpi .gauge .val {
+    position: absolute;
+    bottom: 6px;
+    left: 0; right: 0;
+    text-align: center;
+    font-size: 22px;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+  }
+  .kpi .footer {
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--muted);
+    display: flex; justify-content: center; gap: 8px;
+    font-weight: 600;
+  }
+  .kpi .footer .pct { font-weight: 800; }
+  .kpi .footer.good .pct { color: var(--good); }
+  .kpi .footer.warn .pct { color: var(--warn); }
+  .kpi .footer.bad  .pct { color: var(--bad); }
+
+  /* ----- CHART CARDS ----- */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .card {
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+  }
+  .card-head {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 10px;
+  }
+  .card-head h3 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1.3px;
+    color: var(--ink);
+    font-weight: 800;
+    margin: 0;
+  }
+  .card-head .toggles {
+    margin-left: auto;
+    display: flex; gap: 4px;
+  }
+  .toggle {
+    background: #fff;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    padding: 5px 11px;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all .12s ease;
+  }
+  .toggle:hover { border-color: var(--navy); }
+  .toggle.active {
+    background: var(--navy);
+    color: #fff;
+    border-color: var(--navy);
+  }
+  .chart-wrap { position: relative; height: 220px; }
+  .chart-wrap.tall { height: 280px; }
+
+  /* ----- EMPTY/HIDDEN ----- */
+  .hidden { display: none !important; }
+
+  /* ----- FOOTER ----- */
+  footer {
+    text-align: center;
+    color: var(--ink);
+    opacity: .5;
+    font-size: 11px;
+    padding: 18px 10px 10px;
+  }
+
+  /* ----- RESPONSIVE ----- */
+  @media (max-width: 1200px) {
+    .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; }
+    aside.sidebar { display: none; }
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 600px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .top-actions .top-btn span:not(.ic) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============== TOP BAR ============== -->
+<header class="topbar">
+  <a class="hub-btn" href="../" title="Back to Hub">← HUB</a>
+  <div class="brand-logo">
+    <img src="../logo.png" alt="" onerror="this.parentElement.innerHTML='<div class=fallback>P</div>'" />
+  </div>
+  <div class="brand-title">
+    <div class="name">GK<span class="lab">LAB</span></div>
+    <div class="sub" id="brandSub">Goalkeepers Performance Analysis</div>
+  </div>
+
+  <div class="topbar-spacer"></div>
+
+  <div class="player-select-wrap" id="playerSelectWrap">
+    <span class="label">Player</span>
+    <select class="player-select" id="playerSelect"></select>
+  </div>
+
+  <div class="top-actions">
+    <button class="top-btn primary" id="btnImport"><span class="ic ic-up"></span><span>Import CSV</span></button>
+    <button class="top-btn" id="btnClear"><span class="ic ic-trash"></span><span>Reset to base</span></button>
+    <button class="top-btn" id="btnExport"><span class="ic ic-down"></span><span>Export voor coaches</span></button>
+  </div>
+
+  <div class="crest">
+    <img src="../logo.png" alt="" onerror="this.parentElement.style.display='none'" />
+  </div>
+
+  <input type="file" id="csvInput" accept=".csv" style="display:none;" />
+</header>
+
+<!-- ============== APP ============== -->
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <h4>Goalkeepers</h4>
+    <div id="athleteList">
+      <div style="font-size:11px; color: rgba(15,29,61,.55); padding: 6px 10px;">No data loaded</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="content">
+
+    <!-- DASHBOARD -->
+    <div id="dashContent">
+
+      <!-- DAILY DROP BAR -->
+      <label class="drop-bar" id="dropBar" for="csvInput2">
+        <div class="icon">⬆</div>
+        <div class="text">
+          <div class="big">Drop new CSV here to add daily data</div>
+          <div class="small">Existing data is preserved · same session+player+drill is replaced · expected columns: Player Display Name, Session Date, Dives, GK Load, …</div>
+        </div>
+        <div class="status empty" id="dropStatus">base data only</div>
+        <input type="file" id="csvInput2" accept=".csv" />
+      </label>
+
+      <!-- PLAYER BANNER -->
+      <div class="player-banner">
+        <div class="avatar" id="bannerAvatar">—</div>
+        <div class="info">
+          <h2 id="bannerName">—</h2>
+          <div class="meta">
+            <span><b id="bannerRole">Goalkeeper</b></span>
+            <span>Last session: <b id="bannerLastDate">—</b></span>
+            <span>Sessions: <b id="bannerSessions">—</b></span>
+          </div>
+        </div>
+        <div class="session-badge" id="bannerBadge">— sessions</div>
+      </div>
+
+      <!-- KPI CARDS (5) -->
+      <div class="kpi-grid">
+        <div class="kpi" data-metric="dives">
+          <div class="label">Dives / session</div>
+          <div class="gauge"><svg viewBox="0 0 100 60"></svg><div class="val">—</div></div>
+          <div class="footer"><span class="pct">—</span> <span>Best: <b class="best">—</b></span></div>
+        </div>
+        <div class="kpi" data-metric="load">
+          <div class="label">GK Load (avg)</div>
+          <div class="gauge"><svg viewBox="0 0 100 60"></svg><div class="val">—</div></div>
+          <div class="footer"><span class="pct">—</span> <span>Best: <b class="best">—</b></span></div>
+        </div>
+        <div class="kpi" data-metric="impact">
+          <div class="label">Avg Dive Impact</div>
+          <div class="gauge"><svg viewBox="0 0 100 60"></svg><div class="val">—</div></div>
+          <div class="footer"><span class="pct">—</span> <span>Best: <b class="best">—</b></span></div>
+        </div>
+        <div class="kpi" data-metric="dist">
+          <div class="label">Total Distance (m)</div>
+          <div class="gauge"><svg viewBox="0 0 100 60"></svg><div class="val">—</div></div>
+          <div class="footer"><span class="pct">—</span> <span>Max: <b class="best">—</b></span></div>
+        </div>
+        <div class="kpi" data-metric="power">
+          <div class="label">Avg GK Power</div>
+          <div class="gauge"><svg viewBox="0 0 100 60"></svg><div class="val">—</div></div>
+          <div class="footer"><span class="pct">—</span> <span>Best: <b class="best">—</b></span></div>
+        </div>
+      </div>
+
+      <!-- ROW 1: Two trend cards -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head">
+            <h3>Trend over sessions</h3>
+            <div class="toggles" id="trendToggles">
+              <button class="toggle active" data-key="gkLoad">GK Load</button>
+              <button class="toggle" data-key="dives">Dives</button>
+              <button class="toggle" data-key="avgPower">Power</button>
+              <button class="toggle" data-key="avgDiveImpact">Impact</button>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="chartTrend"></canvas></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>Volume metrics</h3>
+            <div class="toggles" id="volumeToggles">
+              <button class="toggle active" data-key="totalDist">Total Dist</button>
+              <button class="toggle" data-key="hmlDist">HML</button>
+              <button class="toggle" data-key="totalTime">Time</button>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="chartVolume"></canvas></div>
+        </div>
+      </div>
+
+      <!-- ROW 2: Profile + Acc/Dec scatter -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head">
+            <h3>Performance profile (vs team avg)</h3>
+          </div>
+          <div class="chart-wrap tall"><canvas id="chartRadar"></canvas></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>Dives — Left vs Right per session</h3>
+          </div>
+          <div class="chart-wrap tall"><canvas id="chartLR"></canvas></div>
+        </div>
+      </div>
+
+      <!-- ROW 3: Acc/Dec -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head">
+            <h3>Accelerations &amp; Decelerations</h3>
+          </div>
+          <div class="chart-wrap"><canvas id="chartAcc"></canvas></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>GK Load vs Dive Impact</h3>
+          </div>
+          <div class="chart-wrap"><canvas id="chartScatter"></canvas></div>
+        </div>
+      </div>
+
+    </div>
+
+    <footer>
+      <strong>Panetolikos FC</strong> · Performance Department · Goalkeepers Module
+    </footer>
+
+  </main>
+</div>
+
+<script>
+/* ==============================================================
+   GK LAB — interactive logic (JUMPLAB style)
+   ============================================================== */
+
+const STATE = {
+  raw: [],
+  players: [],
+  selectedPlayer: null,
+  trendKey: 'gkLoad',
+  volumeKey: 'totalDist',
+  charts: {},
+};
+
+const COLORS = {
+  navy:    '#0f1d3d',
+  yellow:  '#f4d03a',
+  accent:  '#c0392b',
+  accent2: '#1f618d',
+  good:    '#2e7d4f',
+  warn:    '#c98b1a',
+  cream:   '#faf3e3',
+  line:    '#d9cfb6',
+  muted:   '#5a6478',
+};
+
+/* ---------- helpers ---------- */
+function avg(a){ return a.length ? a.reduce((x,y)=>x+y,0)/a.length : 0; }
+function sum(a){ return a.reduce((x,y)=>x+y,0); }
+function max(a){ return a.length ? Math.max(...a) : 0; }
+function fmt(n, d=1){ return Number(n).toLocaleString(undefined,{minimumFractionDigits:d, maximumFractionDigits:d}); }
+function fmt0(n){ return Math.round(Number(n)).toLocaleString(); }
+
+function parseDate(str) {
+  if (!str) return null;
+  const s = String(str).trim().replace(/"/g, '');
+  const parts = s.split('/');
+  if (parts.length === 3) {
+    const m = +parts[0], d = +parts[1], y = +parts[2];
+    return new Date(y, m - 1, d);
+  }
+  const dt = new Date(s);
+  return isNaN(dt) ? null : dt;
+}
+function fmtDateShort(d){
+  if (!d) return '';
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+function fmtDateFull(d){
+  if (!d) return '';
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+function dateKey(d){ return d ? d.toISOString().slice(0,10) : ''; }
+function cleanPlayer(name){ return String(name||'').replace(/"/g,'').trim().replace(/\s+/g,' '); }
+function initialsOf(name){
+  const parts = String(name||'').split(/\s+/).filter(Boolean);
+  if (!parts.length) return '—';
+  if (parts.length === 1) return parts[0].slice(0,2).toUpperCase();
+  return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
+}
+
+/* ---------- CSV LOAD ---------- */
+function parseCSVRows(text){
+  const result = Papa.parse(text, {
+    header: true, skipEmptyLines: true, dynamicTyping: false,
+    transformHeader: h => h.trim(),
+  });
+  const num = (v) => {
+    if (v === undefined || v === null || v === '') return 0;
+    const n = parseFloat(String(v).replace(/[",]/g,''));
+    return isNaN(n) ? 0 : n;
+  };
+  return result.data.map(r => {
+    const dt = parseDate(r['Session Date'] || r['Drill Date']);
+    if (!dt) return null;
+    return {
+      player: cleanPlayer(r['Player Display Name']),
+      sessionType: cleanPlayer(r['Session Type']),
+      drillTitle: cleanPlayer(r['Drill Title']) || 'Entire Session',
+      date: dt,
+      dateKey: dateKey(dt),
+      dayOfWeek: cleanPlayer(r['Session Day of Week']),
+      dives: num(r['Dives']),
+      divesL: num(r['Dives Left']),
+      divesR: num(r['Dives Right']),
+      gkLoad: num(r['GK Load']),
+      avgPower: num(r['Average GK Power']),
+      avgDiveImpact: num(r['Average Dive Impact']),
+      totalDist: num(r['Total Distance']),
+      hmlDist: num(r['HML Distance']),
+      accAbs: num(r['Accelerations (Absolute)']),
+      decAbs: num(r['Decelerations (Absolute)']),
+      totalTime: num(r['Total Time']),
+    };
+  }).filter(r => r && r.player);
+}
+
+/**
+ * Aggregate raw drill-level rows into one row per player+date (sessions).
+ * Sums volumes, takes max for "average" reactivity metrics.
+ */
+function aggregateRows(rows){
+  const grouped = {};
+  rows.forEach(r => {
+    const key = r.player + '|' + r.dateKey;
+    if (!grouped[key]) {
+      grouped[key] = { ...r };
+    } else {
+      const g = grouped[key];
+      g.dives += r.dives;
+      g.divesL += r.divesL;
+      g.divesR += r.divesR;
+      g.gkLoad += r.gkLoad;
+      g.totalDist += r.totalDist;
+      g.hmlDist += r.hmlDist;
+      g.accAbs += r.accAbs;
+      g.decAbs += r.decAbs;
+      g.totalTime += r.totalTime;
+      g.avgPower = Math.max(g.avgPower, r.avgPower);
+      g.avgDiveImpact = Math.max(g.avgDiveImpact, r.avgDiveImpact);
+    }
+  });
+  return Object.values(grouped).sort((a,b) => a.date - b.date);
+}
+
+/**
+ * Drill-level dedup key for merging uploads.
+ * Same player + date + session-type + drill = same row → newer upload wins.
+ */
+function drillKey(r){
+  return [r.player, r.dateKey, r.sessionType, r.drillTitle].join('|');
+}
+
+// All drill-level rows currently loaded — base + any merged uploads.
+// We re-aggregate STATE.raw from this on every change.
+let RAW_DRILLS = new Map(); // drillKey → drillRow
+
+function rebuildState(){
+  const drills = [...RAW_DRILLS.values()];
+  STATE.raw = aggregateRows(drills);
+  STATE.players = [...new Set(STATE.raw.map(r => r.player))].sort();
+  if (!STATE.players.includes(STATE.selectedPlayer)) {
+    STATE.selectedPlayer = STATE.players[0] || null;
+  }
+  renderSidebar();
+  renderPlayerSelect();
+  refresh();
+}
+
+// Filename of the base dataset shipped alongside index.html.
+// Update this CSV in your repo to update the default view — no code changes needed.
+const BASE_CSV_PATH = 'Goalkeeper_Base.csv';
+
+async function loadBaseCSV(){
+  setDropStatus('loading base data…', false);
+  try {
+    const res = await fetch(BASE_CSV_PATH, { cache: 'no-cache' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    const drills = parseCSVRows(text);
+    if (!drills.length) throw new Error('no valid rows');
+    RAW_DRILLS = new Map();
+    drills.forEach(d => RAW_DRILLS.set(drillKey(d), d));
+    rebuildState();
+    setDropStatus(`base data · ${STATE.raw.length} sessions`, false);
+  } catch (err) {
+    // Fallback: empty state — user can drop a CSV manually.
+    RAW_DRILLS = new Map();
+    rebuildState();
+    setDropStatus(`⚠ couldn't load ${BASE_CSV_PATH} — drop a CSV to start`, false);
+    console.warn('Base CSV load failed:', err);
+  }
+}
+
+function mergeCSV(text, fileName){
+  const drills = parseCSVRows(text);
+  if (!drills.length) {
+    setDropStatus(`⚠ ${fileName}: no valid rows`, false);
+    return;
+  }
+  let added = 0, replaced = 0;
+  drills.forEach(d => {
+    const k = drillKey(d);
+    if (RAW_DRILLS.has(k)) replaced++; else added++;
+    RAW_DRILLS.set(k, d);
+  });
+  rebuildState();
+  const summary = added + replaced > 0
+    ? `✓ ${fileName} · +${added} new, ${replaced} replaced`
+    : `${fileName}: nothing new`;
+  setDropStatus(summary, true);
+}
+
+function setDropStatus(msg, ok){
+  const el = document.getElementById('dropStatus');
+  if (!el) return;
+  el.textContent = msg;
+  // Green when data is present (base or merged); empty grey otherwise.
+  el.classList.remove('empty', 'warn');
+  if (msg.startsWith('⚠')) el.classList.add('warn');
+  else if (!STATE.raw.length) el.classList.add('empty');
+}
+
+/* ---------- SIDEBAR ---------- */
+function renderSidebar(){
+  const list = document.getElementById('athleteList');
+  list.innerHTML = '';
+  STATE.players.forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'athlete' + (p === STATE.selectedPlayer ? ' active' : '');
+    el.innerHTML = `<div class="initials">${initialsOf(p)}</div><div class="name">${p}</div>`;
+    el.onclick = () => { STATE.selectedPlayer = p; refresh(); };
+    list.appendChild(el);
+  });
+}
+
+/* ---------- PLAYER SELECT ---------- */
+function renderPlayerSelect(){
+  const sel = document.getElementById('playerSelect');
+  sel.innerHTML = '';
+  STATE.players.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p;
+    opt.textContent = p;
+    if (p === STATE.selectedPlayer) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  sel.onchange = () => { STATE.selectedPlayer = sel.value; refresh(); };
+}
+
+/* ---------- KPI GAUGE ---------- */
+function drawGauge(svgEl, pct, color){
+  // half-circle arc, pct 0..1
+  const cx = 50, cy = 50, r = 38;
+  const start = Math.PI;          // 180°
+  const end = 2 * Math.PI;        // 360°
+  const totalAngle = end - start;
+  const cur = start + totalAngle * Math.max(0, Math.min(1, pct));
+
+  const arc = (a0, a1) => {
+    const x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0);
+    const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
+    const large = (a1 - a0) > Math.PI ? 1 : 0;
+    return `M ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1}`;
+  };
+
+  svgEl.innerHTML = `
+    <path d="${arc(start, end)}" stroke="rgba(15,29,61,0.10)" stroke-width="8" fill="none" stroke-linecap="round" />
+    <path d="${arc(start, cur)}" stroke="${color}" stroke-width="8" fill="none" stroke-linecap="round" />
+  `;
+}
+
+function colorForPct(pct){
+  if (pct >= 0.85) return COLORS.good;
+  if (pct >= 0.6)  return COLORS.warn;
+  return COLORS.accent;
+}
+function classForPct(pct){
+  if (pct >= 0.85) return 'good';
+  if (pct >= 0.6)  return 'warn';
+  return 'bad';
+}
+
+/* ---------- BANNER + KPI ---------- */
+function refreshBannerAndKPIs(){
+  const p = STATE.selectedPlayer;
+  const rows = STATE.raw.filter(r => r.player === p);
+  if (!rows.length) return;
+  const last = rows[rows.length-1];
+
+  document.getElementById('bannerName').textContent = p;
+  document.getElementById('bannerAvatar').textContent = initialsOf(p);
+  document.getElementById('bannerLastDate').textContent = fmtDateFull(last.date);
+  document.getElementById('bannerSessions').textContent = rows.length;
+  document.getElementById('bannerBadge').textContent = rows.length + ' sessions';
+
+  const teamRows = STATE.raw;
+  const cards = document.querySelectorAll('.kpi');
+
+  const cur = {
+    dives: avg(rows.map(r=>r.dives)),
+    load:  avg(rows.map(r=>r.gkLoad)),
+    impact: avg(rows.map(r=>r.avgDiveImpact)),
+    dist:  avg(rows.map(r=>r.totalDist)),
+    power: avg(rows.map(r=>r.avgPower)),
+  };
+  const best = {
+    dives: max(rows.map(r=>r.dives)),
+    load:  max(rows.map(r=>r.gkLoad)),
+    impact: max(rows.map(r=>r.avgDiveImpact)),
+    dist:  max(rows.map(r=>r.totalDist)),
+    power: max(rows.map(r=>r.avgPower)),
+  };
+  const teamAvg = {
+    dives: avg(teamRows.map(r=>r.dives)),
+    load:  avg(teamRows.map(r=>r.gkLoad)),
+    impact: avg(teamRows.map(r=>r.avgDiveImpact)),
+    dist:  avg(teamRows.map(r=>r.totalDist)),
+    power: avg(teamRows.map(r=>r.avgPower)),
+  };
+
+  const display = {
+    dives:  { val: fmt(cur.dives,1),  best: fmt(best.dives,0) },
+    load:   { val: fmt(cur.load,1),   best: fmt(best.load,1) },
+    impact: { val: fmt(cur.impact,1), best: fmt(best.impact,1) },
+    dist:   { val: fmt0(cur.dist),    best: fmt0(best.dist) },
+    power:  { val: fmt0(cur.power),   best: fmt0(best.power) },
+  };
+
+  cards.forEach(card => {
+    const m = card.dataset.metric;
+    const ratio = teamAvg[m] > 0 ? cur[m] / teamAvg[m] : 0;
+    const pct = Math.max(0, Math.min(1, ratio / 1.2)); // 1.2x team avg = full gauge
+    const color = colorForPct(pct);
+    const cls = classForPct(pct);
+
+    const svg = card.querySelector('svg');
+    drawGauge(svg, pct, color);
+    card.querySelector('.val').textContent = display[m].val;
+    card.querySelector('.val').style.color = color;
+
+    const footer = card.querySelector('.footer');
+    footer.classList.remove('good','warn','bad');
+    footer.classList.add(cls);
+    footer.querySelector('.pct').textContent = Math.round(ratio*100) + '%';
+    footer.querySelector('.best').textContent = display[m].best;
+  });
+}
+
+/* ---------- CHARTS ---------- */
+function destroyCharts(){
+  Object.values(STATE.charts).forEach(c => { try { c.destroy(); } catch(e){} });
+  STATE.charts = {};
+}
+
+const baseOpts = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { labels: { color: COLORS.navy, font: { size: 11, weight: '600' } } },
+    tooltip: {
+      backgroundColor: COLORS.navy, titleFont:{size:12}, bodyFont:{size:11}, padding:8,
+    }
+  },
+  scales: {
+    x: { ticks:{color:COLORS.muted, font:{size:10}}, grid:{color:'rgba(15,29,61,0.06)'} },
+    y: { ticks:{color:COLORS.muted, font:{size:10}}, grid:{color:'rgba(15,29,61,0.06)'}, beginAtZero:true }
+  }
+};
+
+const TREND_LABELS = {
+  gkLoad: 'GK Load',
+  dives: 'Dives',
+  avgPower: 'Avg GK Power',
+  avgDiveImpact: 'Avg Dive Impact',
+};
+const VOLUME_LABELS = {
+  totalDist: 'Total Distance (m)',
+  hmlDist: 'HML Distance (m)',
+  totalTime: 'Total Time (min)',
+};
+
+function buildTrend(rows){
+  const ctx = document.getElementById('chartTrend');
+  const key = STATE.trendKey;
+  const labels = rows.map(r => fmtDateShort(r.date));
+  const data = rows.map(r => r[key]);
+
+  STATE.charts.trend = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: TREND_LABELS[key],
+        data,
+        borderColor: COLORS.navy,
+        backgroundColor: 'rgba(15,29,61,0.08)',
+        borderWidth: 3,
+        pointRadius: 5,
+        pointBackgroundColor: COLORS.navy,
+        pointHoverRadius: 7,
+        tension: 0.35,
+        fill: true,
+      }]
+    },
+    options: { ...baseOpts, plugins: { ...baseOpts.plugins, legend: { display: false } } }
+  });
+}
+
+function buildVolume(rows){
+  const ctx = document.getElementById('chartVolume');
+  const key = STATE.volumeKey;
+  const labels = rows.map(r => fmtDateShort(r.date));
+  const data = rows.map(r => r[key]);
+
+  STATE.charts.volume = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: VOLUME_LABELS[key],
+        data,
+        borderColor: COLORS.warn,
+        backgroundColor: 'rgba(201,139,26,0.18)',
+        borderWidth: 3,
+        pointRadius: 5,
+        pointBackgroundColor: COLORS.warn,
+        pointHoverRadius: 7,
+        tension: 0.35,
+        fill: true,
+      }]
+    },
+    options: { ...baseOpts, plugins: { ...baseOpts.plugins, legend: { display: false } } }
+  });
+}
+
+function buildRadar(rows){
+  const ctx = document.getElementById('chartRadar');
+  const teamRows = STATE.raw;
+
+  const metrics = ['dives','gkLoad','avgPower','avgDiveImpact','totalDist','hmlDist'];
+  const labels  = ['Dives','GK Load','Power','Impact','Dist','HML'];
+
+  // normalise each metric vs team max
+  const teamMax = {};
+  metrics.forEach(m => { teamMax[m] = Math.max(1, max(teamRows.map(r=>r[m]))); });
+
+  const playerVals = metrics.map(m => avg(rows.map(r=>r[m])) / teamMax[m] * 100);
+  const teamVals   = metrics.map(m => avg(teamRows.map(r=>r[m])) / teamMax[m] * 100);
+
+  STATE.charts.radar = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Player',
+          data: playerVals,
+          borderColor: COLORS.navy,
+          backgroundColor: 'rgba(15,29,61,0.18)',
+          borderWidth: 2.5,
+          pointRadius: 4,
+          pointBackgroundColor: COLORS.navy,
+        },
+        {
+          label: 'Team avg',
+          data: teamVals,
+          borderColor: COLORS.warn,
+          backgroundColor: 'rgba(201,139,26,0.10)',
+          borderWidth: 2,
+          borderDash: [5,4],
+          pointRadius: 3,
+          pointBackgroundColor: COLORS.warn,
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: COLORS.navy, font: { size: 11, weight: '600' } } },
+        tooltip: { backgroundColor: COLORS.navy, padding: 8 }
+      },
+      scales: {
+        r: {
+          angleLines: { color: 'rgba(15,29,61,0.15)' },
+          grid:       { color: 'rgba(15,29,61,0.10)' },
+          pointLabels:{ color: COLORS.navy, font: { size: 11, weight: '700' } },
+          ticks: { display: false, beginAtZero: true, max: 100 },
+          suggestedMin: 0, suggestedMax: 100,
+        }
+      }
+    }
+  });
+}
+
+function buildLR(rows){
+  const ctx = document.getElementById('chartLR');
+  const labels = rows.map(r => fmtDateShort(r.date));
+
+  STATE.charts.lr = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Left',  data: rows.map(r=>r.divesL), backgroundColor: COLORS.accent2, borderRadius: 4, stack: 'd' },
+        { label: 'Right', data: rows.map(r=>r.divesR), backgroundColor: COLORS.accent,  borderRadius: 4, stack: 'd' },
+      ]
+    },
+    options: {
+      ...baseOpts,
+      scales: {
+        x: { stacked: true, ticks:{color:COLORS.muted,font:{size:10}}, grid:{color:'rgba(15,29,61,0.06)'} },
+        y: { stacked: true, ticks:{color:COLORS.muted,font:{size:10}}, grid:{color:'rgba(15,29,61,0.06)'}, beginAtZero:true }
+      }
+    }
+  });
+}
+
+function buildAcc(rows){
+  const ctx = document.getElementById('chartAcc');
+  const labels = rows.map(r => fmtDateShort(r.date));
+  STATE.charts.acc = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Acc',
+          data: rows.map(r=>r.accAbs),
+          borderColor: COLORS.good,
+          backgroundColor: 'rgba(46,125,79,0.10)',
+          borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: COLORS.good,
+          tension: 0.3,
+        },
+        {
+          label: 'Dec',
+          data: rows.map(r=>r.decAbs),
+          borderColor: COLORS.accent,
+          backgroundColor: 'rgba(192,57,43,0.08)',
+          borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: COLORS.accent,
+          borderDash: [5,4], tension: 0.3,
+        }
+      ]
+    },
+    options: { ...baseOpts }
+  });
+}
+
+function buildScatter(rows){
+  const ctx = document.getElementById('chartScatter');
+  const teamRows = STATE.raw;
+
+  const playerData = rows.map(r => ({ x: r.gkLoad, y: r.avgDiveImpact, dt: fmtDateFull(r.date) }));
+  const teamData   = teamRows
+    .filter(r => r.player !== STATE.selectedPlayer)
+    .map(r => ({ x: r.gkLoad, y: r.avgDiveImpact }));
+
+  // medians for crosshairs
+  const allLoads = STATE.raw.map(r=>r.gkLoad).sort((a,b)=>a-b);
+  const allImps  = STATE.raw.map(r=>r.avgDiveImpact).sort((a,b)=>a-b);
+  const medL = allLoads[Math.floor(allLoads.length/2)] || 0;
+  const medI = allImps[Math.floor(allImps.length/2)] || 0;
+
+  const linePlugin = {
+    id: 'crosshair',
+    afterDraw(chart){
+      const { ctx: c, chartArea, scales } = chart;
+      if (!scales.x || !scales.y) return;
+      c.save();
+      c.strokeStyle = 'rgba(192,57,43,0.5)';
+      c.setLineDash([4,4]);
+      c.lineWidth = 1;
+      const xPx = scales.x.getPixelForValue(medL);
+      const yPx = scales.y.getPixelForValue(medI);
+      c.beginPath(); c.moveTo(xPx, chartArea.top); c.lineTo(xPx, chartArea.bottom); c.stroke();
+      c.beginPath(); c.moveTo(chartArea.left, yPx); c.lineTo(chartArea.right, yPx); c.stroke();
+      c.restore();
+    }
+  };
+
+  STATE.charts.scatter = new Chart(ctx, {
+    type: 'scatter',
+    data: {
+      datasets: [
+        {
+          label: 'Team (others)',
+          data: teamData,
+          backgroundColor: 'rgba(90,100,120,0.35)',
+          borderColor: 'rgba(90,100,120,0.6)',
+          pointRadius: 5,
+        },
+        {
+          label: 'Player',
+          data: playerData,
+          backgroundColor: COLORS.navy,
+          borderColor: COLORS.yellow,
+          borderWidth: 2,
+          pointRadius: 7,
+          pointHoverRadius: 9,
+        }
+      ]
+    },
+    options: {
+      ...baseOpts,
+      plugins: {
+        ...baseOpts.plugins,
+        tooltip: {
+          ...baseOpts.plugins.tooltip,
+          callbacks: {
+            label: (ctx) => {
+              const r = ctx.raw;
+              const lab = r.dt ? `${r.dt}: ` : '';
+              return `${lab}Load ${fmt(r.x,1)} · Impact ${fmt(r.y,1)}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { title: { display: true, text: 'GK Load', color: COLORS.muted, font:{size:11,weight:'600'} },
+             ticks:{color:COLORS.muted,font:{size:10}}, grid:{color:'rgba(15,29,61,0.06)'} },
+        y: { title: { display: true, text: 'Avg Dive Impact', color: COLORS.muted, font:{size:11,weight:'600'} },
+             ticks:{color:COLORS.muted,font:{size:10}}, grid:{color:'rgba(15,29,61,0.06)'} }
+      }
+    },
+    plugins: [linePlugin]
+  });
+}
+
+/* ---------- REFRESH ---------- */
+function refresh(){
+  // sidebar / select highlights
+  document.querySelectorAll('.athlete').forEach(el => {
+    el.classList.toggle('active', el.querySelector('.name')?.textContent === STATE.selectedPlayer);
+  });
+  const sel = document.getElementById('playerSelect');
+  if (sel) sel.value = STATE.selectedPlayer || '';
+
+  const rows = STATE.raw.filter(r => r.player === STATE.selectedPlayer)
+                        .sort((a,b)=>a.date - b.date);
+
+  refreshBannerAndKPIs();
+  destroyCharts();
+  if (rows.length){
+    buildTrend(rows);
+    buildVolume(rows);
+    buildRadar(rows);
+    buildLR(rows);
+    buildAcc(rows);
+    buildScatter(rows);
+  }
+}
+
+/* ---------- TOGGLES ---------- */
+document.getElementById('trendToggles').addEventListener('click', e => {
+  const btn = e.target.closest('.toggle'); if (!btn) return;
+  document.querySelectorAll('#trendToggles .toggle').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  STATE.trendKey = btn.dataset.key;
+  if (STATE.charts.trend) STATE.charts.trend.destroy();
+  const rows = STATE.raw.filter(r => r.player === STATE.selectedPlayer).sort((a,b)=>a.date-b.date);
+  if (rows.length) buildTrend(rows);
+});
+document.getElementById('volumeToggles').addEventListener('click', e => {
+  const btn = e.target.closest('.toggle'); if (!btn) return;
+  document.querySelectorAll('#volumeToggles .toggle').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  STATE.volumeKey = btn.dataset.key;
+  if (STATE.charts.volume) STATE.charts.volume.destroy();
+  const rows = STATE.raw.filter(r => r.player === STATE.selectedPlayer).sort((a,b)=>a.date-b.date);
+  if (rows.length) buildVolume(rows);
+});
+
+/* ---------- DROP BAR / FILE INPUTS ---------- */
+const dropBar = document.getElementById('dropBar');
+const csvInput = document.getElementById('csvInput');
+const csvInput2 = document.getElementById('csvInput2');
+
+dropBar.addEventListener('dragover', e => { e.preventDefault(); dropBar.classList.add('dragover'); });
+dropBar.addEventListener('dragleave', () => dropBar.classList.remove('dragover'));
+dropBar.addEventListener('drop', e => {
+  e.preventDefault(); dropBar.classList.remove('dragover');
+  if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+});
+csvInput.addEventListener('change', e => { if (e.target.files.length) handleFiles(e.target.files); e.target.value = ''; });
+csvInput2.addEventListener('change', e => { if (e.target.files.length) handleFiles(e.target.files); e.target.value = ''; });
+
+function handleFiles(files){
+  // Process sequentially so the merged status from each shows accurately.
+  Array.from(files).forEach(f => {
+    const reader = new FileReader();
+    reader.onload = ev => mergeCSV(ev.target.result, f.name);
+    reader.readAsText(f);
+  });
+}
+
+/* ---------- TOP BAR ACTIONS ---------- */
+document.getElementById('btnImport').onclick = () => csvInput.click();
+
+document.getElementById('btnClear').onclick = () => {
+  if (!confirm('Reset to base data only? Any uploaded CSVs will be removed.')) return;
+  loadBaseCSV();
+};
+
+document.getElementById('btnExport').onclick = () => {
+  if (!STATE.raw.length) { alert('No data loaded.'); return; }
+  const p = STATE.selectedPlayer;
+  const rows = STATE.raw.filter(r => r.player === p);
+  const headers = ['Date','Day','Session Type','Dives','L','R','GK Load','Avg Power','Avg Dive Impact','Total Dist','HML','Acc','Dec','Time'];
+  const lines = [headers.join(',')];
+  rows.forEach(r => {
+    lines.push([
+      r.date.toISOString().slice(0,10),
+      r.dayOfWeek, r.sessionType,
+      r.dives, r.divesL, r.divesR,
+      r.gkLoad.toFixed(1), r.avgPower.toFixed(0), r.avgDiveImpact.toFixed(1),
+      r.totalDist.toFixed(0), r.hmlDist.toFixed(0),
+      r.accAbs, r.decAbs, r.totalTime.toFixed(1),
+    ].join(','));
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `${p.replace(/\s+/g,'_')}_GK_export.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+/* ---------- BOOT ---------- */
+loadBaseCSV();
+</script>
+</body>
+</html>
